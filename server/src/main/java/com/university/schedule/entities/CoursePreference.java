@@ -17,6 +17,10 @@ public class CoursePreference {
     @Column(length = 36)
     private String id;
 
+    @ManyToOne
+    @JoinColumn(name = "semester_id")
+    private Semester semester;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "teacher_id")
     private Teacher teacher;
@@ -25,5 +29,5 @@ public class CoursePreference {
     @JoinColumn(name = "course_id")
     private Course course;
 
-    private Integer preferenceLevel;
+    private Integer preferenceValue;
 }

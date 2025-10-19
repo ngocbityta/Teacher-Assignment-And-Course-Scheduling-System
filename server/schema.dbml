@@ -1,0 +1,65 @@
+Table Classroom {
+  id varchar [pk]
+  name varchar
+  capacity int
+}
+
+Table Course {
+  id varchar [pk]
+  name varchar
+  min_teachers integer
+  max_teachers integer
+}
+
+Table Section {
+  id varchar [pk]
+  course_id varchar [ref: > Course.id]
+  name varchar
+}
+
+Table Teacher {
+  id varchar [pk]
+  name varchar
+}
+
+Table Semester {
+  id varchar [pk]
+  name varchar
+  start_time time
+  end_time time
+}
+
+Table CoursePreference {
+  id varchar [pk]
+  semester_id varchar [ref: > Semester.id]
+  teacher_id varchar [ref: > Teacher.id]
+  course_id varchar [ref: > Course.id]
+  preference_value int
+}
+
+Table TimePreference {
+  id varchar [pk]
+  teacher_id varchar [ref: > Teacher.id]
+  semester_id varchar [ref: > Semester.id]
+  period enum
+  day enum
+  preference_value int
+}
+
+
+Table TeacherRegistration {
+  id varchar [pk]
+  teacher_id varchar [ref: > Teacher.id]
+  semester_id varchar [ref: > Semester.id]
+  max_courses int
+}
+
+Table Schedule {
+  id varchar [pk]
+  semester_id varchar [ref: > Semester.id]
+  teacher_id varchar [ref: > Teacher.id]
+  section_id varchar [ref: > Section.id]
+  classroom_id varchar [ref: > Classroom.id]
+  day enum
+  period enum
+}

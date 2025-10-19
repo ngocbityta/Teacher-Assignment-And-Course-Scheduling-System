@@ -1,15 +1,16 @@
 package com.university.schedule.services;
 
-import com.university.schedule.dtos.TeacherDTO;
-import com.university.schedule.entities.Teacher;
-import com.university.schedule.exceptions.NotFoundException;
-import com.university.schedule.mappers.TeacherMapper;
-import com.university.schedule.repositories.TeacherRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.university.schedule.dtos.TeacherDTO;
+import com.university.schedule.entities.Teacher;
+import com.university.schedule.exceptions.NotFoundException;
+import com.university.schedule.mappers.TeacherMapper;
+import com.university.schedule.repositories.TeacherRepository;
 
 @RequiredArgsConstructor
 @Service

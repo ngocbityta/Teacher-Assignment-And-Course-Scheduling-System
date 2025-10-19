@@ -1,8 +1,9 @@
 package com.university.schedule.services;
 
-import com.university.schedule.dtos.TeacherDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+
+import com.university.schedule.dtos.TeacherDTO;
 
 public interface TeacherService {
     TeacherDTO create(TeacherDTO dto);

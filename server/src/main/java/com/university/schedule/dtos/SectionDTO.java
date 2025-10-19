@@ -1,0 +1,21 @@
+package com.university.schedule.dtos;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.*;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class SectionDTO {
+    @NotBlank(message = "Id is required")
+    private String id;
+
+    @NotBlank(message = "Course ID is required")
+    private String courseId;
+
+    @NotBlank(message = "Name is required")
+    private String name;
+}
