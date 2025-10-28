@@ -1,17 +1,17 @@
 package com.university.schedule.dtos;
 
-import com.university.schedule.enums.Period;
+import com.university.schedule.enums.RegistrationStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
-import java.time.DayOfWeek;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class TimePreferenceDTO {
+public class TeachingRegistrationDTO {
+
     @NotBlank
     private String id;
 
@@ -22,14 +22,8 @@ public class TimePreferenceDTO {
     private String semesterId;
 
     @NotNull
-    private Period period;
+    private Integer maxCourses;
 
     @NotNull
-    private DayOfWeek day;
-
-    @NotNull
-    private String teachingRegistrationId;
-
-    @NotNull
-    private Integer preferenceValue;
+    private RegistrationStatus status;
 }

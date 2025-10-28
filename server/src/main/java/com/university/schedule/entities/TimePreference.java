@@ -30,6 +30,10 @@ public class TimePreference {
     @JoinColumn(name = "semester_id", nullable = false)
     private Semester semester;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "teaching_registration_id", nullable = false)
+    private TeachingRegistration teachingRegistration;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "day", nullable = false)
     private DayOfWeek day;

@@ -51,8 +51,8 @@ public class SemesterServiceImpl implements SemesterService {
         Semester entity = semesterRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Semester not found with id " + id));
         entity.setName(dto.getName());
-        entity.setStartTime(dto.getStartTime());
-        entity.setEndTime(dto.getEndTime());
+        entity.setStartDate(dto.getStartDate());
+        entity.setEndDate(dto.getEndDate());
         return semesterMapper.toDto(semesterRepository.save(entity));
     }
 

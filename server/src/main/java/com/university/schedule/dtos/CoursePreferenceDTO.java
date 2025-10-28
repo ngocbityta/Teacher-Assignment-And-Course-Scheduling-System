@@ -19,6 +19,9 @@ public class CoursePreferenceDTO {
     @NotBlank
     private String teacherId;
 
+    @NotNull
+    private String teachingRegistrationId;
+
     @NotBlank
     private String courseId;
 

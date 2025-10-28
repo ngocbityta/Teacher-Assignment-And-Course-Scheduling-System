@@ -21,6 +21,9 @@ public class Section {
     @Column(name = "name")
     private String name;
 
+    @Column(name = "period_required")
+    private Integer periodRequired;
+
     @ManyToOne
     @JoinColumn(name = "course_id", nullable = false)
     private Course course;

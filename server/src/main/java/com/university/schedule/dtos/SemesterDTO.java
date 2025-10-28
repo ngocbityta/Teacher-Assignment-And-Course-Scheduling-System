@@ -2,7 +2,9 @@ package com.university.schedule.dtos;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import java.time.LocalTime;
+
+import java.time.LocalDate;
+
 import lombok.*;
 
 @Getter
@@ -11,15 +13,16 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class SemesterDTO {
+
     @NotBlank(message = "Id is required")
     private String id;
 
     @NotBlank(message = "Name is required")
     private String name;
 
-    @NotNull(message = "Start time is required")
-    private LocalTime startTime;
+    @NotNull(message = "Start date is required")
+    private LocalDate startDate;
 
-    @NotNull(message = "End time is required")
-    private LocalTime endTime;
+    @NotNull(message = "End date is required")
+    private LocalDate endDate;
 }

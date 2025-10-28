@@ -85,12 +85,12 @@ CREATE TABLE IF NOT EXISTS Semester
     VARCHAR
     NOT
     NULL,
-    start_time
-    TIME
+    start_date
+    DATE
     NOT
     NULL,
-    end_time
-    TIME
+    end_date
+    DATE
     NOT
     NULL
 );

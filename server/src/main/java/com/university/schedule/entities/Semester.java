@@ -1,7 +1,8 @@
 package com.university.schedule.entities;
 
 import jakarta.persistence.*;
-import java.time.LocalTime;
+
+import java.time.LocalDate;
 import lombok.*;
 
 @Entity
@@ -22,9 +23,9 @@ public class Semester {
     @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(name = "start_time")
-    private LocalTime startTime;
+    @Column(name = "start_date")
+    private LocalDate startDate;
 
-    @Column(name = "end_time")
-    private LocalTime endTime;
+    @Column(name = "end_date")
+    private LocalDate endDate;
 }

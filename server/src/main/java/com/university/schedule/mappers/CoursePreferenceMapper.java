@@ -7,13 +7,18 @@ import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface CoursePreferenceMapper {
-    @Mapping(source = "semester.id", target = "semesterId")
-    @Mapping(source = "teacher.id", target = "teacherId")
-    @Mapping(source = "course.id", target = "courseId")
+
+    // Entity → DTO
+    @Mapping(target = "semesterId", source = "semester.id")
+    @Mapping(target = "teacherId", source = "teacher.id")
+    @Mapping(target = "courseId", source = "course.id")
+    @Mapping(target = "teachingRegistrationId", source = "teachingRegistration.id")
     CoursePreferenceDTO toDto(CoursePreference entity);
 
-    @Mapping(source = "semesterId", target = "semester.id")
-    @Mapping(source = "teacherId", target = "teacher.id")
-    @Mapping(source = "courseId", target = "course.id")
+    // DTO → Entity (bỏ qua các quan hệ, sẽ set ở service)
+    @Mapping(target = "semester", ignore = true)
+    @Mapping(target = "teacher", ignore = true)
+    @Mapping(target = "course", ignore = true)
+    @Mapping(target = "teachingRegistration", ignore = true)
     CoursePreference toEntity(CoursePreferenceDTO dto);
 }

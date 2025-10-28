@@ -1,13 +1,9 @@
 package com.university.schedule.entities;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.*;
 import lombok.*;
+
+import com.university.schedule.enums.RegistrationStatus;
 
 @Entity
 @Table(name = "teaching_registrations",
@@ -32,6 +28,10 @@ public class TeachingRegistration {
     @ManyToOne
     @JoinColumn(name = "semester_id", nullable = false)
     private Semester semester;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private RegistrationStatus status;
 
     @Column(name = "max_courses")
     private Integer maxCourses;

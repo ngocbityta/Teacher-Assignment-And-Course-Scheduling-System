@@ -16,6 +16,9 @@ public class SectionDTO {
     @NotBlank(message = "Course ID is required")
     private String courseId;
 
+    @NotNull(message = "Number of required period cannot be null")
+    private Integer periodRequired;
+
     @NotBlank(message = "Name is required")
     private String name;
 }

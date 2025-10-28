@@ -25,6 +25,10 @@ public class CoursePreference {
     @JoinColumn(name = "teacher_id")
     private Teacher teacher;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "teaching_registration_id", nullable = false)
+    private TeachingRegistration teachingRegistration;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "course_id")
     private Course course;
