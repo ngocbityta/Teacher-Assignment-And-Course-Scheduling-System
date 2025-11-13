@@ -18,36 +18,43 @@
   font-size: 0.95rem;
 }
 
-/* Tab buttons */
+/* Tab buttons - modern pill-style container */
 .tabButtons {
   display: flex;
-  gap: 8px;
-  margin: 20px 0;
+  gap: 6px;
+  margin: 24px 0;
   flex-wrap: wrap;
+  padding: 6px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  width: fit-content;
 }
 
 .tabButtons button {
-  padding: 10px 20px;
-  border: 2px solid #e2e8f0;
-  background: white;
-  color: #2d3748;
+  padding: 10px 18px;
+  border: none;
+  background: transparent;
+  color: #4a5568;
   border-radius: 8px;
   font-weight: 500;
+  font-size: 0.95rem;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.25s ease;
+  text-transform: capitalize;
 }
 
 .tabButtons button:hover:not(:disabled) {
-  border-color: #3182ce;
-  background: #ebf8ff;
-  color: #3182ce;
+  background: rgba(56, 161, 105, 0.08);
+  color: #38a169;
 }
 
 .tabButtons button:disabled {
-  background: #3182ce;
+  background: #38a169;
   color: white;
-  border-color: #3182ce;
   cursor: default;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(56, 161, 105, 0.2);
 }
 
 /* Action buttons */
@@ -57,10 +64,9 @@
   margin-bottom: 20px;
   flex-wrap: wrap;
 }
-
 .btnAdd {
   padding: 12px 24px !important;
-  background: #3182ce !important;
+  background: #38a169 !important; /* green like Teachers */
   color: white !important;
   border: none !important;
   border-radius: 8px !important;
@@ -71,8 +77,8 @@
 }
 
 .btnAdd:hover {
-  background: #2c5282 !important;
-  box-shadow: 0 4px 12px rgba(49, 130, 206, 0.3) !important;
+  background: #2f855a !important;
+  box-shadow: 0 4px 12px rgba(56, 161, 105, 0.26) !important;
   transform: translateY(-2px) !important;
 }
 
@@ -312,8 +318,10 @@
   display: flex;
   gap: 12px;
   margin-top: 24px;
-  padding-top: 16px;
+  padding: 16px 24px;
   border-top: 1px solid #e2e8f0;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .btnSubmit {
@@ -330,6 +338,8 @@
 
 .btnSubmit:hover {
   background: #2c5282 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(44,82,130,0.18);
 }
 
 .btnCancel {
@@ -346,6 +356,7 @@
 
 .btnCancel:hover {
   background: #a0aec0 !important;
+  transform: translateY(-1px);
 }
 
 /* Loading & Empty */

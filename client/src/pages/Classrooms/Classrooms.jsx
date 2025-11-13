@@ -172,7 +172,7 @@ const Classrooms = () => {
                             handleEditClick(c);
                           }}
                         >
-                          ✏️ Sửa
+                          Sửa
                         </button>
                         <button
                           className={styles.btnDelete}
@@ -181,7 +181,7 @@ const Classrooms = () => {
                             handleDeleteClick(id);
                           }}
                         >
-                          🗑️ Xóa
+                          Xóa
                         </button>
                       </div>
                     </div>
@@ -228,7 +228,7 @@ const Classrooms = () => {
                         setSelectedClassroom(null);
                       }}
                     >
-                      ✏️ Chỉnh sửa
+                      Chỉnh sửa
                     </button>
                     <button
                       className={styles.btnDelete}
@@ -237,7 +237,7 @@ const Classrooms = () => {
                         setSelectedClassroom(null);
                       }}
                     >
-                      🗑️ Xóa
+                      Xóa
                     </button>
                   </div>
                 </div>
@@ -255,7 +255,8 @@ const Classrooms = () => {
                     </button>
                   </div>
                   <form onSubmit={submitForm}>
-                    <div className={styles.formGroup}>
+                    <div className={styles.modalBody}>
+                      <div className={styles.formGroup}>
                       <label>Mã phòng *</label>
                       {editing ? (
                         <input
@@ -306,13 +307,14 @@ const Classrooms = () => {
                         <option value="maintenance">Bảo trì</option>
                       </select>
                     </div>
-                    <div className={styles.formButtons}>
-                      <button type="submit" className={styles.btnSubmit}>
-                        {editing ? "Cập nhật" : "Tạo mới"}
-                      </button>
-                      <button type="button" className={styles.btnCancel} onClick={() => setShowForm(false)}>
-                        Hủy
-                      </button>
+                      <div className={styles.formButtons}>
+                        <button type="submit" className={styles.btnSubmit}>
+                          {editing ? "Cập nhật" : "Tạo mới"}
+                        </button>
+                        <button type="button" className={styles.btnCancel} onClick={() => setShowForm(false)}>
+                          Hủy
+                        </button>
+                      </div>
                     </div>
                   </form>
                 </div>

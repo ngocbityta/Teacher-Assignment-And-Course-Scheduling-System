@@ -242,7 +242,8 @@ const Teachers = () => {
                     </button>
                   </div>
                   <form onSubmit={submitForm}>
-                    <div className={styles.formGroup}>
+                    <div className={styles.modalBody}>
+                      <div className={styles.formGroup}>
                       <label>Mã giảng viên *</label>
                       {editing ? (
                         <input
@@ -282,13 +283,14 @@ const Teachers = () => {
                         <option value="on_leave">Tạm nghỉ</option>
                       </select>
                     </div>
-                    <div className={styles.formButtons}>
-                      <button type="submit" className={styles.btnSubmit}>
-                        {editing ? "Cập nhật" : "Tạo mới"}
-                      </button>
-                      <button type="button" className={styles.btnCancel} onClick={() => setShowForm(false)}>
-                        Hủy
-                      </button>
+                      <div className={styles.formButtons}>
+                        <button type="submit" className={styles.btnSubmit}>
+                          {editing ? "Cập nhật" : "Tạo mới"}
+                        </button>
+                        <button type="button" className={styles.btnCancel} onClick={() => setShowForm(false)}>
+                          Hủy
+                        </button>
+                      </div>
                     </div>
                   </form>
                 </div>

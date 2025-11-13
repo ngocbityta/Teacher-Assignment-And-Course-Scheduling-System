@@ -270,7 +270,7 @@ const Courses = () => {
                 className={styles.btnSubmit}
                 onClick={() => handleEdit(detailCourse)}
               >
-                ✏️ Chỉnh sửa
+                Chỉnh sửa
               </button>
               <button
                 className={styles.btnCancel}
