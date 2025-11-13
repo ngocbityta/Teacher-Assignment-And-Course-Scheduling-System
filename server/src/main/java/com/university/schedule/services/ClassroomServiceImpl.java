@@ -52,6 +52,7 @@ public class ClassroomServiceImpl implements ClassroomService {
                 .orElseThrow(() -> new NotFoundException("Classroom not found with id " + id));
         entity.setName(dto.getName());
         entity.setCapacity(dto.getCapacity());
+        entity.setStatus(dto.getStatus());
         return classroomMapper.toDto(classroomRepository.save(entity));
     }
 

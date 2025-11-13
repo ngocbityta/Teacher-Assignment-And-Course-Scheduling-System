@@ -1,0 +1,32 @@
+.container {
+  display: flex;
+  min-height: 100vh;
+  background: #f9fafb;
+}
+
+.content {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+}
+.layout {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Sidebar fixed chiếm 230px */
+.main {
+  /* Let the layout handle space for the sidebar using flex; avoid calc(100% - fixed) which
+     can cause fractional rounding and horizontal scroll. */
+  flex: 1 1 auto;
+  min-width: 0; /* allow child content to shrink instead of overflowing */
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background-color: #f9fafc;
+  padding: 32px;
+  box-sizing: border-box;
+  max-width: 100%;
+}

@@ -1,0 +1,17 @@
+.container {
+  padding: 32px;
+  background-color: #f7f9fc;
+  min-height: 100vh;
+}
+
+h2 {
+  color: #1a202c;
+  font-size: 1.8rem;
+  margin-bottom: 12px;
+}
+
+p {
+  color: #4a5568;
+  font-size: 1rem;
+  line-height: 1.6;
+}

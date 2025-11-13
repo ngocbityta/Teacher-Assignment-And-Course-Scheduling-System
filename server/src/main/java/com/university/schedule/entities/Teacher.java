@@ -20,4 +20,7 @@ public class Teacher {
 
     @Column(name = "name", nullable = false)
     private String name;
+
+    @Column(name = "status", length = 50)
+    private String status; // e.g., "active", "inactive", "on_leave"
 }

@@ -23,4 +23,7 @@ public class Classroom {
 
     @Column(name = "capacity")
     private Integer capacity;
+
+    @Column(name = "status", length = 50)
+    private String status; // e.g., "active", "inactive", "maintenance"
 }

@@ -51,6 +51,7 @@ public class TeacherServiceImpl implements TeacherService {
         Teacher entity = teacherRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Teacher not found with id " + id));
         entity.setName(dto.getName());
+        entity.setStatus(dto.getStatus());
         Teacher updated = teacherRepository.save(entity);
         return teacherMapper.toDto(updated);
     }

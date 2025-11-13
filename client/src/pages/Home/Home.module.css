@@ -1,0 +1,18 @@
+.container {
+  width: 100%;
+  box-sizing: border-box; /* để padding không làm tràn width */
+  padding: 32px;
+  text-align: center;
+  background-color: #f9fafc;
+}
+
+h1 {
+  color: #2b3a67;
+  font-size: 2rem;
+  margin-bottom: 16px;
+}
+
+p {
+  font-size: 1.1rem;
+  color: #555;
+}

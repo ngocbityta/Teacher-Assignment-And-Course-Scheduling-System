@@ -1,0 +1,56 @@
+.sidebar {
+  width: 230px; /* match layout expectation */
+  min-width: 0;
+  max-width: 100%;
+  background: #1e293b; /* Xanh đậm navy */
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 1rem;
+  box-sizing: border-box;
+  min-height: 100vh;
+}
+
+.logoSection {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 2rem;
+}
+
+.logo {
+  width: 40px;
+  height: 40px;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.link {
+  color: #cbd5e1;
+  text-decoration: none;
+  font-size: 1rem;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  transition: background 0.2s ease;
+}
+
+.link:hover {
+  background: #334155;
+  color: #fff;
+}
+
+.active {
+  background: #2563eb;
+  color: #fff;
+}
+
+.icon {
+  font-size: 1.2rem;
+}
