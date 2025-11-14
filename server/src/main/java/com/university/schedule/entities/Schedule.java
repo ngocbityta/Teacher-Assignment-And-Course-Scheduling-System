@@ -1,6 +1,7 @@
 package com.university.schedule.entities;
 
 import com.university.schedule.enums.Period;
+import com.university.schedule.enums.Semester;
 import jakarta.persistence.*;
 
 import java.time.DayOfWeek;
@@ -26,8 +27,8 @@ public class Schedule {
     @Column(name = "id", length = 100)
     private String id;
 
-    @ManyToOne
-    @JoinColumn(name = "semester_id", nullable = false)
+        @Enumerated(EnumType.STRING)
+        @Column(name = "semester", nullable = false)
     private Semester semester;
 
     @ManyToOne

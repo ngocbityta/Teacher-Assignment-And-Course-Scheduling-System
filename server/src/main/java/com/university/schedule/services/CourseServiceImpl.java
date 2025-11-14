@@ -1,16 +1,15 @@
 package com.university.schedule.services;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.university.schedule.dtos.CourseDTO;
 import com.university.schedule.entities.Course;
 import com.university.schedule.exceptions.NotFoundException;
 import com.university.schedule.mappers.CourseMapper;
 import com.university.schedule.repositories.CourseRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
 @Service
@@ -58,9 +57,8 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     public void delete(String id) {
-        if (!courseRepository.existsById(id)) {
-            throw new NotFoundException("Course not found with id " + id);
-        }
-        courseRepository.deleteById(id);
+        Course entity = courseRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Course not found with id " + id));
+        courseRepository.delete(entity);
     }
 }

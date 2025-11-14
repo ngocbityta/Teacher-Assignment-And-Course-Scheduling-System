@@ -7,5 +7,7 @@ import org.mapstruct.Mapper;
 @Mapper(componentModel = "spring")
 public interface TeacherMapper {
     TeacherDTO toDto(Teacher entity);
+
     Teacher toEntity(TeacherDTO dto);
 }
+

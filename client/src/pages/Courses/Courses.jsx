@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import styles from "./Courses.module.css";
 import { coursesAPI } from "../../api/courses";
+import { getSelectedSemester } from "../../api/index";
 import { sectionAPI } from "../../api/section";
 
 const Tabs = { LIST: "list", STATS: "stats" };
@@ -19,8 +20,8 @@ const Courses = () => {
   const load = async () => {
     setLoading(true);
     try {
-      const data = await coursesAPI.list();
-      setCourses(Array.isArray(data.items) ? data.items : []);
+      const { items } = await coursesAPI.list();
+      setCourses(items || []);
     } catch (err) {
       console.error(err);
       alert("Failed to load courses: " + err.message);
@@ -36,10 +37,8 @@ const Courses = () => {
   const handleOpenDetail = async (course) => {
     setDetailCourse(course);
     try {
-      const data = await sectionAPI.list();
-      const courseSections = (Array.isArray(data.items) ? data.items : []).filter(
-        (s) => s.courseId === course.id
-      );
+      const { items } = await sectionAPI.list();
+      const courseSections = (items || []).filter((s) => s.courseId === course.id);
       setSections(courseSections);
     } catch (err) {
       console.error(err);
@@ -76,7 +75,9 @@ const Courses = () => {
       if (editingId) {
         await coursesAPI.update(editingId, form);
       } else {
-        await coursesAPI.create(form);
+        const sem = getSelectedSemester();
+        const payload = sem ? { ...form, semester: sem } : form;
+        await coursesAPI.create(payload);
       }
       setShowFormModal(false);
       setForm({ id: "", name: "", minTeachers: "", maxTeachers: "" });
@@ -107,7 +108,6 @@ const Courses = () => {
   return (
     <div className={styles.container}>
       <h2>Quản lý Môn học</h2>
-      <p>Tạo, chỉnh sửa, và xóa các môn học.</p>
 
       <div className={styles.tabButtons}>
         <button

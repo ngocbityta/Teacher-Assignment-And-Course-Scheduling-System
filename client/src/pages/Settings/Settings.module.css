@@ -1,7 +1,10 @@
 .container {
   padding: 32px;
-  background-color: #f7f9fc;
+  background-color: #f3f6fb;
   min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
 }
 
 h2 {
@@ -14,4 +17,44 @@ p {
   color: #4a5568;
   font-size: 1rem;
   line-height: 1.6;
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(25, 40, 70, 0.06);
+  padding: 24px;
+  width: 100%;
+  max-width: 720px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+label {
+  font-weight: 600;
+  color: #2d3748;
+}
+
+select, input[type="text"], input[type="number"] {
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 0.95rem;
+}
+
+.helper {
+  font-size: 0.9rem;
+  color: #718096;
+  margin-top: 8px;
+}
+
+@media (max-width: 640px) {
+  .container { padding: 16px; }
+  .card { padding: 16px; }
 }

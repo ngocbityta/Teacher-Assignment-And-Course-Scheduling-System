@@ -21,7 +21,7 @@ const Classrooms = () => {
     setLoading(true);
     try {
       const data = await classroomAPI.list();
-      setClassrooms(Array.isArray(data) ? data : []);
+      setClassrooms(data || []);
     } catch (err) {
       console.error(err);
       alert("Failed to load classrooms: " + err.message);

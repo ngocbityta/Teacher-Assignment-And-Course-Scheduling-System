@@ -19,7 +19,7 @@ public class TeachingRegistrationDTO {
     private String teacherId;
 
     @NotBlank
-    private String semesterId;
+    private String semester;
 
     @NotNull
     private Integer maxCourses;

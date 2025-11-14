@@ -19,7 +19,7 @@ public class TimePreferenceDTO {
     private String teacherId;
 
     @NotBlank
-    private String semesterId;
+    private String semester;
 
     @NotNull
     private Period period;

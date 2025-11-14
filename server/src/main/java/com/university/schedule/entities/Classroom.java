@@ -1,5 +1,6 @@
 package com.university.schedule.entities;
 
+import com.university.schedule.enums.Semester;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -26,4 +27,8 @@ public class Classroom {
 
     @Column(name = "status", length = 50)
     private String status; // e.g., "active", "inactive", "maintenance"
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "semester", nullable = false)
+    private Semester semester;
 }

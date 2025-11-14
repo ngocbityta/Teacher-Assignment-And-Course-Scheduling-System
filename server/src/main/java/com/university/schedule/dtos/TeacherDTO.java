@@ -16,4 +16,7 @@ public class TeacherDTO {
     private String name;
 
     private String status; // e.g., "active", "inactive", "on_leave"
+
+    @NotBlank(message = "Semester is required")
+    private String semester;
 }

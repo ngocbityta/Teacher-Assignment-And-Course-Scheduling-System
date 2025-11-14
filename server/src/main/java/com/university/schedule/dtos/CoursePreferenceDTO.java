@@ -14,7 +14,7 @@ public class CoursePreferenceDTO {
     private String id;
 
     @NotBlank
-    private String semesterId;
+    private String semester;
 
     @NotBlank
     private String teacherId;

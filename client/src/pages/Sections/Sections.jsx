@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import styles from "./Sections.module.css";
 import { sectionAPI } from "../../api/section";
 import { coursesAPI } from "../../api/courses";
+import { getSelectedSemester } from "../../api/index";
 
 const Tabs = { LIST: "list", STATS: "stats" };
 
@@ -22,12 +23,12 @@ const Sections = () => {
   const load = async () => {
     setLoading(true);
     try {
-      const [sectionsData, coursesData] = await Promise.all([
+      const [{ items: sectionItems }, { items: courseItems }] = await Promise.all([
         sectionAPI.list(),
         coursesAPI.list(),
       ]);
-      setSections(Array.isArray(sectionsData.items) ? sectionsData.items : []);
-      setCourses(Array.isArray(coursesData.items) ? coursesData.items : []);
+      setSections(sectionItems || []);
+      setCourses(courseItems || []);
     } catch (err) {
       console.error(err);
       alert("Failed to load data: " + err.message);
@@ -67,7 +68,9 @@ const Sections = () => {
       if (editingId) {
         await sectionAPI.update(editingId, form);
       } else {
-        await sectionAPI.create(form);
+        const sem = getSelectedSemester();
+        const payload = sem ? { ...form, semester: sem } : form;
+        await sectionAPI.create(payload);
       }
       setShowFormModal(false);
       setForm({ id: "", name: "", courseId: "", periodRequired: "" });
@@ -117,7 +120,6 @@ const Sections = () => {
   return (
     <div className={styles.container}>
       <h2>Quản lý Học phần</h2>
-      <p>Tạo, chỉnh sửa, và xóa các học phần. Mỗi học phần thuộc một môn học cụ thể.</p>
 
       <div className={styles.tabButtons}>
         <button
@@ -180,13 +182,13 @@ const Sections = () => {
                               className={styles.btnEdit}
                               onClick={() => handleEdit(section)}
                             >
-                              ✏️
+                              Sửa
                             </button>
                             <button
                               className={styles.btnDelete}
                               onClick={() => handleDelete(section.id)}
                             >
-                              🗑️
+                              Xóa
                             </button>
                           </div>
                         </div>

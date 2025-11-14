@@ -1,5 +1,6 @@
 package com.university.schedule.entities;
 
+import com.university.schedule.enums.Semester;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -17,8 +18,8 @@ public class CoursePreference {
     @Column(length = 36)
     private String id;
 
-    @ManyToOne
-    @JoinColumn(name = "semester_id")
+    @Enumerated(EnumType.STRING)
+    @Column(name = "semester")
     private Semester semester;
 
     @ManyToOne(fetch = FetchType.LAZY)

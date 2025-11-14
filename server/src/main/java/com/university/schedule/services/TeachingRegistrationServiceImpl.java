@@ -2,61 +2,66 @@ package com.university.schedule.services;
 
 import com.university.schedule.dtos.TeachingRegistrationDTO;
 import com.university.schedule.entities.*;
+import com.university.schedule.exceptions.NotFoundException;
 import com.university.schedule.mappers.TeachingRegistrationMapper;
 import com.university.schedule.repositories.*;
-import jakarta.persistence.EntityNotFoundException;
+import com.university.schedule.utils.SemesterUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-@Service
 @RequiredArgsConstructor
+@Service
+@Transactional
 public class TeachingRegistrationServiceImpl implements TeachingRegistrationService {
 
     private final TeachingRegistrationRepository teachingRegistrationRepository;
     private final TeacherRepository teacherRepository;
-    private final SemesterRepository semesterRepository;
     private final TeachingRegistrationMapper mapper;
 
     @Override
     public TeachingRegistrationDTO create(TeachingRegistrationDTO dto) {
         TeachingRegistration entity = mapper.toEntity(dto);
-        entity.setTeacher(teacherRepository.getReferenceById(dto.getTeacherId()));
-        entity.setSemester(semesterRepository.getReferenceById(dto.getSemesterId()));
+        entity.setTeacher(teacherRepository.findById(dto.getTeacherId())
+                .orElseThrow(() -> new NotFoundException("Teacher not found with id " + dto.getTeacherId())));
+        entity.setSemester(SemesterUtils.parseSemester(dto.getSemester()));
         return mapper.toDto(teachingRegistrationRepository.save(entity));
     }
 
     @Override
     public TeachingRegistrationDTO update(String id, TeachingRegistrationDTO dto) {
         TeachingRegistration existing = teachingRegistrationRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("TeachingRegistration not found: " + id));
+                .orElseThrow(() -> new NotFoundException("TeachingRegistration not found with id " + id));
 
         existing.setMaxCourses(dto.getMaxCourses());
         existing.setStatus(dto.getStatus());
-        existing.setTeacher(teacherRepository.getReferenceById(dto.getTeacherId()));
-        existing.setSemester(semesterRepository.getReferenceById(dto.getSemesterId()));
+        existing.setTeacher(teacherRepository.findById(dto.getTeacherId())
+                .orElseThrow(() -> new NotFoundException("Teacher not found with id " + dto.getTeacherId())));
+        existing.setSemester(SemesterUtils.parseSemester(dto.getSemester()));
 
         return mapper.toDto(teachingRegistrationRepository.save(existing));
     }
 
     @Override
+    @Transactional(readOnly = true)
     public TeachingRegistrationDTO getById(String id) {
         TeachingRegistration entity = teachingRegistrationRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("TeachingRegistration not found: " + id));
+                .orElseThrow(() -> new NotFoundException("TeachingRegistration not found with id " + id));
         return mapper.toDto(entity);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<TeachingRegistrationDTO> getAll() {
         return teachingRegistrationRepository.findAll().stream().map(mapper::toDto).toList();
     }
 
     @Override
     public void delete(String id) {
-        if (!teachingRegistrationRepository.existsById(id)) {
-            throw new EntityNotFoundException("TeachingRegistration not found: " + id);
-        }
-        teachingRegistrationRepository.deleteById(id);
+        TeachingRegistration entity = teachingRegistrationRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("TeachingRegistration not found with id " + id));
+        teachingRegistrationRepository.delete(entity);
     }
 }

@@ -1,6 +1,7 @@
 package com.university.schedule.controllers;
 
 import com.university.schedule.dtos.ClassroomDTO;
+import com.university.schedule.enums.Semester;
 import com.university.schedule.services.ClassroomService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -26,8 +27,9 @@ public class ClassroomController {
 
     @GetMapping
     public Page<ClassroomDTO> search(@RequestParam(required = false) String keyword,
+                                     @RequestParam(required = false) Semester semester,
                                      Pageable pageable) {
-        return classroomService.search(keyword, pageable);
+        return classroomService.search(keyword, semester, pageable);
     }
 
     @PutMapping("/{id}")

@@ -2,9 +2,11 @@ package com.university.schedule.services;
 
 import com.university.schedule.dtos.ScheduleDTO;
 import com.university.schedule.entities.*;
+import com.university.schedule.enums.Semester;
 import com.university.schedule.exceptions.NotFoundException;
 import com.university.schedule.mappers.ScheduleMapper;
 import com.university.schedule.repositories.*;
+import com.university.schedule.utils.SemesterUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,7 +22,6 @@ public class ScheduleServiceImpl implements ScheduleService {
     private final ScheduleRepository repository;
     private final ScheduleMapper mapper;
     private final TeacherRepository teacherRepository;
-    private final SemesterRepository semesterRepository;
     private final SectionRepository sectionRepository;
     private final ClassroomRepository classroomRepository;
 
@@ -34,8 +35,9 @@ public class ScheduleServiceImpl implements ScheduleService {
 
         Teacher teacher = teacherRepository.findById(dto.getTeacherId())
                 .orElseThrow(() -> new NotFoundException("Teacher not found with id " + dto.getTeacherId()));
-        Semester semester = semesterRepository.findById(dto.getSemesterId())
-                .orElseThrow(() -> new NotFoundException("Semester not found with id " + dto.getSemesterId()));
+        
+        Semester semester = SemesterUtils.parseSemester(dto.getSemester());
+        
         Section section = sectionRepository.findById(dto.getSectionId())
                 .orElseThrow(() -> new NotFoundException("Section not found with id " + dto.getSectionId()));
         Classroom classroom = classroomRepository.findById(dto.getClassroomId())
@@ -45,7 +47,6 @@ public class ScheduleServiceImpl implements ScheduleService {
         entity.setSemester(semester);
         entity.setSection(section);
         entity.setClassroom(classroom);
-
         entity.setDay(dto.getDay());
         entity.setPeriod(dto.getPeriod());
 
@@ -73,8 +74,9 @@ public class ScheduleServiceImpl implements ScheduleService {
 
         Teacher teacher = teacherRepository.findById(dto.getTeacherId())
                 .orElseThrow(() -> new NotFoundException("Teacher not found with id " + dto.getTeacherId()));
-        Semester semester = semesterRepository.findById(dto.getSemesterId())
-                .orElseThrow(() -> new NotFoundException("Semester not found with id " + dto.getSemesterId()));
+        
+        Semester semester = SemesterUtils.parseSemester(dto.getSemester());
+        
         Section section = sectionRepository.findById(dto.getSectionId())
                 .orElseThrow(() -> new NotFoundException("Section not found with id " + dto.getSectionId()));
         Classroom classroom = classroomRepository.findById(dto.getClassroomId())
@@ -84,7 +86,6 @@ public class ScheduleServiceImpl implements ScheduleService {
         entity.setSemester(semester);
         entity.setSection(section);
         entity.setClassroom(classroom);
-
         entity.setDay(dto.getDay());
         entity.setPeriod(dto.getPeriod());
 
@@ -93,9 +94,8 @@ public class ScheduleServiceImpl implements ScheduleService {
 
     @Override
     public void delete(String id) {
-        if (!repository.existsById(id)) {
-            throw new NotFoundException("Schedule not found with id " + id);
-        }
-        repository.deleteById(id);
+        Schedule entity = repository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Schedule not found with id " + id));
+        repository.delete(entity);
     }
 }

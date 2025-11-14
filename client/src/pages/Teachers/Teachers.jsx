@@ -21,7 +21,7 @@ const Teachers = () => {
     setLoading(true);
     try {
       const data = await teachersAPI.list();
-      setTeachers(Array.isArray(data) ? data : []);
+      setTeachers(data || []);
     } catch (err) {
       console.error(err);
       alert("Failed to load teachers: " + err.message);

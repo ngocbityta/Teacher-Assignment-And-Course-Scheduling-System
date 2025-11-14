@@ -1,19 +1,17 @@
 package com.university.schedule.services;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-
 import com.university.schedule.dtos.SectionDTO;
 import com.university.schedule.entities.Course;
 import com.university.schedule.entities.Section;
 import com.university.schedule.exceptions.NotFoundException;
 import com.university.schedule.mappers.SectionMapper;
-import com.university.schedule.repositories.SectionRepository;
 import com.university.schedule.repositories.CourseRepository;
+import com.university.schedule.repositories.SectionRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
 @Service
@@ -57,7 +55,6 @@ public class SectionServiceImpl implements SectionService {
         return page.map(sectionMapper::toDto);
     }
 
-
     @Override
     public SectionDTO update(String id, SectionDTO dto) {
         Section entity = sectionRepository.findById(id)
@@ -74,9 +71,8 @@ public class SectionServiceImpl implements SectionService {
 
     @Override
     public void delete(String id) {
-        if (!sectionRepository.existsById(id)) {
-            throw new NotFoundException("Section not found with id " + id);
-        }
-        sectionRepository.deleteById(id);
+        Section entity = sectionRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Section not found with id " + id));
+        sectionRepository.delete(entity);
     }
 }

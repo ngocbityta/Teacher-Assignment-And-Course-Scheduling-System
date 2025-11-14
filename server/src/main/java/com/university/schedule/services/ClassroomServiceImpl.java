@@ -1,16 +1,17 @@
 package com.university.schedule.services;
 
+import com.university.schedule.dtos.ClassroomDTO;
+import com.university.schedule.entities.Classroom;
+import com.university.schedule.enums.Semester;
+import com.university.schedule.exceptions.NotFoundException;
+import com.university.schedule.mappers.ClassroomMapper;
+import com.university.schedule.repositories.ClassroomRepository;
+import com.university.schedule.utils.SemesterUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import com.university.schedule.dtos.ClassroomDTO;
-import com.university.schedule.entities.Classroom;
-import com.university.schedule.exceptions.NotFoundException;
-import com.university.schedule.mappers.ClassroomMapper;
-import com.university.schedule.repositories.ClassroomRepository;
 
 @RequiredArgsConstructor
 @Service
@@ -25,7 +26,9 @@ public class ClassroomServiceImpl implements ClassroomService {
         if (classroomRepository.existsById(dto.getId())) {
             throw new IllegalArgumentException("Classroom already exists with id " + dto.getId());
         }
-        Classroom saved = classroomRepository.save(classroomMapper.toEntity(dto));
+        Classroom classroom = classroomMapper.toEntity(dto);
+        classroom.setSemester(SemesterUtils.parseSemester(dto.getSemester()));
+        Classroom saved = classroomRepository.save(classroom);
         return classroomMapper.toDto(saved);
     }
 
@@ -39,10 +42,21 @@ public class ClassroomServiceImpl implements ClassroomService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ClassroomDTO> search(String keyword, Pageable pageable) {
-        Page<Classroom> page = (keyword == null || keyword.isBlank())
-                ? classroomRepository.findAll(pageable)
-                : classroomRepository.findByNameContainingIgnoreCase(keyword.trim(), pageable);
+    public Page<ClassroomDTO> search(String keyword, Semester semester, Pageable pageable) {
+        Page<Classroom> page;
+        if (keyword == null || keyword.isBlank()) {
+            if (semester != null) {
+                page = classroomRepository.findBySemester(semester, pageable);
+            } else {
+                page = classroomRepository.findAll(pageable);
+            }
+        } else {
+            if (semester != null) {
+                page = classroomRepository.findByNameContainingIgnoreCaseAndSemester(keyword.trim(), semester, pageable);
+            } else {
+                page = classroomRepository.findByNameContainingIgnoreCase(keyword.trim(), pageable);
+            }
+        }
         return page.map(classroomMapper::toDto);
     }
 
@@ -53,14 +67,14 @@ public class ClassroomServiceImpl implements ClassroomService {
         entity.setName(dto.getName());
         entity.setCapacity(dto.getCapacity());
         entity.setStatus(dto.getStatus());
+        entity.setSemester(SemesterUtils.parseSemester(dto.getSemester()));
         return classroomMapper.toDto(classroomRepository.save(entity));
     }
 
     @Override
     public void delete(String id) {
-        if (!classroomRepository.existsById(id)) {
-            throw new NotFoundException("Classroom not found with id " + id);
-        }
-        classroomRepository.deleteById(id);
+        Classroom entity = classroomRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Classroom not found with id " + id));
+        classroomRepository.delete(entity);
     }
 }

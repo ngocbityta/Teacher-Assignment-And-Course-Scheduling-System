@@ -26,7 +26,6 @@ const Periods = () => {
   return (
     <div className={styles.container}>
       <h2>Danh sách Tiết học</h2>
-      <p>Các tiết học được cố định và không thể chỉnh sửa.</p>
 
       {loading ? (
         <div className={styles.loading}>Đang tải...</div>

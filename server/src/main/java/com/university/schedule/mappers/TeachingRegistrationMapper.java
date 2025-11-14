@@ -9,10 +9,8 @@ import org.mapstruct.Mapping;
 public interface TeachingRegistrationMapper {
 
     @Mapping(source = "teacher.id", target = "teacherId")
-    @Mapping(source = "semester.id", target = "semesterId")
     TeachingRegistrationDTO toDto(TeachingRegistration entity);
 
     @Mapping(target = "teacher", ignore = true)
-    @Mapping(target = "semester", ignore = true)
     TeachingRegistration toEntity(TeachingRegistrationDTO dto);
 }

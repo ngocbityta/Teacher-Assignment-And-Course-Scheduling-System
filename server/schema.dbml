@@ -2,6 +2,8 @@ Table Classroom {
   id varchar [pk]
   name varchar
   capacity int
+  status varchar
+  semester varchar [ref: > Semester.id]
 }
 
 Table Course {
@@ -20,6 +22,8 @@ Table Section {
 Table Teacher {
   id varchar [pk]
   name varchar
+  status varchar
+  semester varchar [ref: > Semester.id]
 }
 
 Table Semester {
@@ -30,9 +34,10 @@ Table Semester {
 }
 
 Table CoursePreference {
-  id varchar [pk]
-  semester_id varchar [ref: > Semester.id]
+  id uuid [pk]
+  semester varchar [ref: > Semester.id]
   teacher_id varchar [ref: > Teacher.id]
+  teaching_registration_id varchar [ref: > TeacherRegistration.id]
   course_id varchar [ref: > Course.id]
   preference_value int
 }
@@ -40,7 +45,8 @@ Table CoursePreference {
 Table TimePreference {
   id varchar [pk]
   teacher_id varchar [ref: > Teacher.id]
-  semester_id varchar [ref: > Semester.id]
+  teaching_registration_id varchar [ref: > TeacherRegistration.id]
+  semester varchar [ref: > Semester.id]
   period enum
   day enum
   preference_value int
@@ -50,16 +56,17 @@ Table TimePreference {
 Table TeacherRegistration {
   id varchar [pk]
   teacher_id varchar [ref: > Teacher.id]
-  semester_id varchar [ref: > Semester.id]
+  semester varchar [ref: > Semester.id]
+  status varchar
   max_courses int
 }
 
 Table Schedule {
   id varchar [pk]
-  semester_id varchar [ref: > Semester.id]
+  semester varchar [ref: > Semester.id]
   teacher_id varchar [ref: > Teacher.id]
   section_id varchar [ref: > Section.id]
-  classroom_id varchar [ref: > Classroom.id]
+  room_id varchar [ref: > Classroom.id]
   day enum
   period enum
 }
