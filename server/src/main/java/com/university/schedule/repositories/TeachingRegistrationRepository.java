@@ -16,8 +16,8 @@ public interface TeachingRegistrationRepository extends JpaRepository<TeachingRe
     Optional<TeachingRegistration> findByTeacherIdAndSemester(String teacherId, Semester semester);
     
     @Query("SELECT tr.teacher.id FROM TeachingRegistration tr WHERE tr.semester = :semester")
-    List<String> findTeacherIdsBySemester(@Param("semester") Semester semester);
+    List<String> findTeacherIdsBySemester(@Param("semester") com.university.schedule.enums.Semester semester);
     
     @Query("SELECT tr.teacher.id FROM TeachingRegistration tr WHERE tr.semester = :semester AND tr.status IN :statuses")
-    List<String> findTeacherIdsBySemesterAndStatuses(@Param("semester") Semester semester, @Param("statuses") List<RegistrationStatus> statuses);
+    List<String> findTeacherIdsBySemesterAndStatuses(@Param("semester") com.university.schedule.enums.Semester semester, @Param("statuses") List<RegistrationStatus> statuses);
 }

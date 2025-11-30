@@ -292,10 +292,21 @@ const TeachingRegistration = () => {
                   className={styles.cardHeader}
                   onClick={() => openDetail(r.id)}
                 >
-                  <div>
-                    <h3>{teacher.name || r.teacherId}</h3>
-                    <div className={styles.metaLine}>
-                      {r.maxCourses} môn - {r.status}
+                  <div className={styles.teacherInfo}>
+                    <div className={styles.avatarContainer}>
+                      {teacher.avatar ? (
+                        <img src={teacher.avatar} alt={teacher.name} className={styles.avatar} />
+                      ) : (
+                        <div className={styles.avatarPlaceholder}>
+                          {teacher.name ? teacher.name.charAt(0).toUpperCase() : "?"}
+                        </div>
+                      )}
+                    </div>
+                    <div className={styles.teacherDetails}>
+                      <h3>{teacher.name || r.teacherId}</h3>
+                      <div className={styles.metaLine}>
+                        {r.maxCourses} môn - {r.status}
+                      </div>
                     </div>
                   </div>
                   <div className={styles.expandHint}>
@@ -411,6 +422,7 @@ const TeachingRegistration = () => {
                       onChange={(e) =>
                         setForm({ ...form, teacherId: e.target.value })
                       }
+                      className={styles.teacherSelect}
                     >
                       <option value="">-- Chọn giảng viên --</option>
                       {availableTeachers.length === 0 ? (
@@ -425,6 +437,21 @@ const TeachingRegistration = () => {
                         ))
                       )}
                     </select>
+                    {form.teacherId && (() => {
+                      const selectedTeacher = availableTeachers.find(t => t.id === form.teacherId);
+                      return selectedTeacher && (
+                        <div className={styles.selectedTeacherPreview}>
+                          {selectedTeacher.avatar ? (
+                            <img src={selectedTeacher.avatar} alt={selectedTeacher.name} className={styles.previewAvatar} />
+                          ) : (
+                            <div className={styles.previewAvatarPlaceholder}>
+                              {selectedTeacher.name ? selectedTeacher.name.charAt(0).toUpperCase() : "?"}
+                            </div>
+                          )}
+                          <span>{selectedTeacher.name}</span>
+                        </div>
+                      );
+                    })()}
                     {availableTeachers.length === 0 && (
                       <div className={styles.smallNote}>
                         Tất cả giảng viên đã có đăng ký cho học kỳ này

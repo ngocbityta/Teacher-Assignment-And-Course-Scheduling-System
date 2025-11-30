@@ -5,13 +5,12 @@ import styles from "./Sidebar.module.css";
 
 const menu = [
   { name: "Home", path: "/", icon: "🏠" },
+  { name: "Xếp lịch", path: "/schedule", icon: "📅" },
+  { name: "Đăng ký dạy học", path: "/teaching-registration", icon: "📝" },
   { name: "Giảng viên", path: "/teachers", icon: "👩‍🏫" },
-  { name: "Phòng học", path: "/classrooms", icon: "🏛️" },
   { name: "Môn học", path: "/courses", icon: "📘" },
   { name: "Học phần", path: "/sections", icon: "📖" },
   { name: "Tiết học", path: "/periods", icon: "⏰" },
-  { name: "Xếp lịch", path: "/schedule", icon: "📅" },
-  { name: "Đăng ký dạy học", path: "/teaching-registration", icon: "📝" },
   { name: "Cài đặt", path: "/settings", icon: "⚙️" },
 ];
 

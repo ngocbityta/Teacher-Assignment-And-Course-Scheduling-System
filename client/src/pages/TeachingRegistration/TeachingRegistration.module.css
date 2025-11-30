@@ -42,11 +42,57 @@
 }
 
 .cardHeader {
-  padding: 12px 16px;
+  padding: 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   cursor: pointer;
+  gap: 12px;
+}
+
+.teacherInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.avatarContainer {
+  flex-shrink: 0;
+}
+
+.avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e2e8f0;
+}
+
+.avatarPlaceholder {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 1.2rem;
+  border: 2px solid #e2e8f0;
+}
+
+.teacherDetails {
+  flex: 1;
+  min-width: 0;
+}
+
+.teacherDetails h3 {
+  margin: 0 0 4px 0;
+  color: #1a202c;
+  font-size: 1.1rem;
+  font-weight: 600;
 }
 
 .metaLine {
@@ -414,6 +460,49 @@
   color: #a0aec0;
   font-style: italic;
   margin: 0;
+}
+
+.teacherSelect {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.selectedTeacherPreview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 12px;
+  background: #f7fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.previewAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e2e8f0;
+}
+
+.previewAvatarPlaceholder {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 1rem;
+  border: 2px solid #e2e8f0;
 }
 
 /* Modal Buttons */

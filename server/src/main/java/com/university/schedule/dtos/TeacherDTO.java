@@ -19,4 +19,6 @@ public class TeacherDTO {
 
     @NotBlank(message = "Semester is required")
     private String semester;
+
+    private String avatar;
 }

@@ -172,13 +172,16 @@ const Sections = () => {
                           </div>
                           <div className={styles.cardBody}>
                             <p>
-                              <strong>Mã:</strong> {section.id}
+                              <strong>Mã:</strong> 
+                              <span className={styles.codeValue}>{section.id}</span>
                             </p>
                             <p>
-                              <strong>Tiết học cần:</strong> {section.periodRequired}
+                              <strong>⏱️ Tiết học:</strong> 
+                              <span className={styles.badge}>{section.periodRequired} tiết</span>
                             </p>
                             <p>
-                              <strong>Số chỗ ngồi cần:</strong> {section.requiredSeats}
+                              <strong>🪑 Chỗ ngồi:</strong> 
+                              <span className={styles.badge}>{section.requiredSeats} chỗ</span>
                             </p>
                           </div>
                           <div className={styles.cardFooter}>

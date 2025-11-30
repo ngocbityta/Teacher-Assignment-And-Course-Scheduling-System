@@ -28,4 +28,7 @@ public class Teacher {
     @Enumerated(EnumType.STRING)
     @Column(name = "semester", nullable = false)
     private Semester semester;
+
+    @Column(name = "avatar", length = 500)
+    private String avatar;
 }

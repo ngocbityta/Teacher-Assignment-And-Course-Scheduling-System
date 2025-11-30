@@ -12,7 +12,7 @@ const Teachers = () => {
   // form state
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ id: "", name: "", status: "active" });
+  const [form, setForm] = useState({ id: "", name: "", status: "active", avatar: "" });
 
   // detail view state
   const [selectedTeacher, setSelectedTeacher] = useState(null);
@@ -36,13 +36,13 @@ const Teachers = () => {
 
   const handleAddClick = () => {
     setEditing(null);
-    setForm({ id: "", name: "", status: "active" });
+    setForm({ id: "", name: "", status: "active", avatar: "" });
     setShowForm(true);
   };
 
   const handleEditClick = (teacher) => {
     setEditing(teacher.id || teacher._id);
-    setForm({ id: teacher.id || teacher._id || "", name: teacher.name || "", status: teacher.status || "active" });
+    setForm({ id: teacher.id || teacher._id || "", name: teacher.name || "", status: teacher.status || "active", avatar: teacher.avatar || "" });
     setShowForm(true);
   };
 
@@ -68,7 +68,7 @@ const Teachers = () => {
       }
       setShowForm(false);
       setEditing(null);
-      setForm({ id: "", name: "", status: "active" });
+      setForm({ id: "", name: "", status: "active", avatar: "" });
       load();
     } catch (err) {
       console.error(err);
@@ -147,7 +147,21 @@ const Teachers = () => {
                       onClick={() => setSelectedTeacher(t)}
                     >
                       <div className={styles.cardHeader}>
-                        <h3>{t.name}</h3>
+                        <div className={styles.teacherInfo}>
+                          <div className={styles.avatarContainer}>
+                            {t.avatar ? (
+                              <img src={t.avatar} alt={t.name} className={styles.avatar} />
+                            ) : (
+                              <div className={styles.avatarPlaceholder}>
+                                {t.name ? t.name.charAt(0).toUpperCase() : "?"}
+                              </div>
+                            )}
+                          </div>
+                          <div className={styles.teacherDetails}>
+                            <h3>{t.name}</h3>
+                            <p className={styles.teacherId}>Mã: {id}</p>
+                          </div>
+                        </div>
                         <span className={`${styles.statusBadge} ${getStatusColor(t.status)}`}>
                           {getStatusLabel(t.status)}
                         </span>
@@ -192,13 +206,18 @@ const Teachers = () => {
                     </button>
                   </div>
                   <div className={styles.modalBody}>
-                    <div className={styles.infoRow}>
-                      <label>Mã giảng viên:</label>
-                      <span>{selectedTeacher.id || selectedTeacher._id}</span>
-                    </div>
-                    <div className={styles.infoRow}>
-                      <label>Tên:</label>
-                      <span>{selectedTeacher.name}</span>
+                    <div className={styles.teacherDetailHeader}>
+                      {selectedTeacher.avatar ? (
+                        <img src={selectedTeacher.avatar} alt={selectedTeacher.name} className={styles.detailAvatar} />
+                      ) : (
+                        <div className={styles.detailAvatarPlaceholder}>
+                          {selectedTeacher.name ? selectedTeacher.name.charAt(0).toUpperCase() : "?"}
+                        </div>
+                      )}
+                      <div className={styles.teacherDetailInfo}>
+                        <h3>{selectedTeacher.name}</h3>
+                        <p className={styles.teacherDetailId}>Mã: {selectedTeacher.id || selectedTeacher._id}</p>
+                      </div>
                     </div>
                     <div className={styles.infoRow}>
                       <label>Trạng thái:</label>
@@ -282,6 +301,20 @@ const Teachers = () => {
                         <option value="inactive">Không hoạt động</option>
                         <option value="on_leave">Tạm nghỉ</option>
                       </select>
+                    </div>
+                    <div className={styles.formGroup}>
+                      <label>Avatar URL</label>
+                      <input
+                        type="url"
+                        value={form.avatar}
+                        onChange={(e) => setForm({ ...form, avatar: e.target.value })}
+                        placeholder="https://example.com/avatar.jpg"
+                      />
+                      {form.avatar && (
+                        <div className={styles.avatarPreview}>
+                          <img src={form.avatar} alt="Preview" className={styles.avatarPreviewImg} onError={(e) => { e.target.style.display = 'none'; }} />
+                        </div>
+                      )}
                     </div>
                       <div className={styles.formButtons}>
                         <button type="submit" className={styles.btnSubmit}>
