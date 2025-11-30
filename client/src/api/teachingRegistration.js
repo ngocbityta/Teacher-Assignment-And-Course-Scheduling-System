@@ -8,6 +8,10 @@ export const teachingRegistrationAPI = {
         includeSemester: true,
       })
     ),
+  getByStatus: async (status) => {
+    const response = await apiRequest(`/teaching-registrations/status/${status}`);
+    return Array.isArray(response) ? response : [];
+  },
   get: (id) => apiRequest(`/teaching-registrations/${id}`),
   create: (payload) =>
     apiRequest("/teaching-registrations", {
@@ -19,6 +23,10 @@ export const teachingRegistrationAPI = {
       method: "PUT",
       body: withSemester(payload),
     }),
+  approve: (id) =>
+    apiRequest(`/teaching-registrations/${id}/approve`, { method: "POST" }),
+  reject: (id) =>
+    apiRequest(`/teaching-registrations/${id}/reject`, { method: "POST" }),
   remove: (id) =>
     apiRequest(`/teaching-registrations/${id}`, { method: "DELETE" }),
 };

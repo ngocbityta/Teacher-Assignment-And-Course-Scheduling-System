@@ -7,9 +7,6 @@ import lombok.Setter;
 
 import java.util.Map;
 
-/**
- * Standard error response DTO.
- */
 @Getter
 @Setter
 @NoArgsConstructor

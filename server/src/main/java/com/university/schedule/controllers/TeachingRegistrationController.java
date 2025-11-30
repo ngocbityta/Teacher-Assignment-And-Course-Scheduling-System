@@ -1,6 +1,7 @@
 package com.university.schedule.controllers;
 
 import com.university.schedule.dtos.TeachingRegistrationDTO;
+import com.university.schedule.enums.RegistrationStatus;
 import com.university.schedule.services.TeachingRegistrationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +35,21 @@ public class TeachingRegistrationController {
     @GetMapping
     public List<TeachingRegistrationDTO> getAll() {
         return service.getAll();
+    }
+
+    @GetMapping("/status/{status}")
+    public List<TeachingRegistrationDTO> getByStatus(@PathVariable RegistrationStatus status) {
+        return service.getByStatus(status);
+    }
+
+    @PostMapping("/{id}/approve")
+    public TeachingRegistrationDTO approve(@PathVariable String id) {
+        return service.approve(id);
+    }
+
+    @PostMapping("/{id}/reject")
+    public TeachingRegistrationDTO reject(@PathVariable String id) {
+        return service.reject(id);
     }
 
     @DeleteMapping("/{id}")

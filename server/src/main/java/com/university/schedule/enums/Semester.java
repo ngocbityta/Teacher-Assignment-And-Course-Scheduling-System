@@ -1,9 +1,5 @@
 package com.university.schedule.enums;
 
-/**
- * Semester enum (simple like Period).
- * Values stored as-is in database (e.g., "20231" for 2023-1).
- */
 public enum Semester {
     S_20231, // 2023-1
     S_20232, // 2023-2

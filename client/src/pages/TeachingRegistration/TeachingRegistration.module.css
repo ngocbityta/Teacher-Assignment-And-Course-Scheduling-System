@@ -448,3 +448,95 @@
   background: #cbd5e0;
 }
 
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-top: 20px;
+  border-bottom: 2px solid #e6eef6;
+}
+
+.tab {
+  padding: 12px 20px;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #718096;
+  transition: all 0.2s ease;
+  margin-bottom: -2px;
+}
+
+.tab:hover {
+  color: #2d3748;
+  background: rgba(56, 161, 105, 0.05);
+}
+
+.tabActive {
+  color: #38a169;
+  border-bottom-color: #38a169;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #edf2f7;
+}
+
+.btnApprove {
+  padding: 8px 16px;
+  background: #38a169;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex: 1;
+}
+
+.btnApprove:hover {
+  background: #2f855a;
+  box-shadow: 0 2px 8px rgba(56, 161, 105, 0.3);
+}
+
+.btnReject {
+  padding: 8px 16px;
+  background: #e53e3e;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex: 1;
+}
+
+.btnReject:hover {
+  background: #c53030;
+  box-shadow: 0 2px 8px rgba(229, 62, 62, 0.3);
+}
+
+.btnDelete {
+  padding: 8px 16px;
+  background: #718096;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex: 1;
+}
+
+.btnDelete:hover {
+  background: #4a5568;
+  box-shadow: 0 2px 8px rgba(113, 128, 150, 0.3);
+}
+

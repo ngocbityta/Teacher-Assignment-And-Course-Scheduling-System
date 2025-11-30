@@ -13,7 +13,7 @@ const Sections = () => {
   const [activeTab, setActiveTab] = useState(Tabs.LIST);
   const [showFormModal, setShowFormModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [form, setForm] = useState({ id: "", name: "", courseId: "", periodRequired: "" });
+  const [form, setForm] = useState({ id: "", name: "", courseId: "", periodRequired: "", requiredSeats: "" });
   const [collapsedGroups, setCollapsedGroups] = useState({});
 
   const toggleGroup = (courseId) => {
@@ -43,7 +43,7 @@ const Sections = () => {
 
   const handleOpenForm = () => {
     setEditingId(null);
-    setForm({ id: "", name: "", courseId: "", periodRequired: "" });
+    setForm({ id: "", name: "", courseId: "", periodRequired: "", requiredSeats: "" });
     setShowFormModal(true);
   };
 
@@ -54,13 +54,14 @@ const Sections = () => {
       name: section.name,
       courseId: section.courseId,
       periodRequired: section.periodRequired || "",
+      requiredSeats: section.requiredSeats || "",
     });
     setShowFormModal(true);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.id || !form.name || !form.courseId || form.periodRequired === "") {
+    if (!form.id || !form.name || !form.courseId || form.periodRequired === "" || form.requiredSeats === "") {
       alert("Vui lòng điền đủ thông tin");
       return;
     }
@@ -73,7 +74,7 @@ const Sections = () => {
         await sectionAPI.create(payload);
       }
       setShowFormModal(false);
-      setForm({ id: "", name: "", courseId: "", periodRequired: "" });
+      setForm({ id: "", name: "", courseId: "", periodRequired: "", requiredSeats: "" });
       load();
     } catch (err) {
       console.error(err);
@@ -175,6 +176,9 @@ const Sections = () => {
                             </p>
                             <p>
                               <strong>Tiết học cần:</strong> {section.periodRequired}
+                            </p>
+                            <p>
+                              <strong>Số chỗ ngồi cần:</strong> {section.requiredSeats}
                             </p>
                           </div>
                           <div className={styles.cardFooter}>
@@ -285,6 +289,15 @@ const Sections = () => {
                     min="0"
                     value={form.periodRequired}
                     onChange={(e) => setForm({ ...form, periodRequired: e.target.value })}
+                  />
+                </div>
+                <div className={styles.formGroup}>
+                  <label>Số chỗ ngồi cần</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={form.requiredSeats}
+                    onChange={(e) => setForm({ ...form, requiredSeats: e.target.value })}
                   />
                 </div>
               </div>

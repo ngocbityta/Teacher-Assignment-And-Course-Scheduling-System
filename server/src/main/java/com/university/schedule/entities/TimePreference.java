@@ -32,7 +32,7 @@ public class TimePreference {
     private Semester semester;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "teaching_registration_id", nullable = false)
+    @JoinColumn(name = "teaching_registration_id", nullable = false, referencedColumnName = "id", columnDefinition = "varchar(100)")
     private TeachingRegistration teachingRegistration;
 
     @Enumerated(EnumType.STRING)

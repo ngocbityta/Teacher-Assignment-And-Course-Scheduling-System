@@ -23,7 +23,7 @@ public class Teacher {
     private String name;
 
     @Column(name = "status", length = 50)
-    private String status; // e.g., "active", "inactive", "on_leave"
+    private String status;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "semester", nullable = false)

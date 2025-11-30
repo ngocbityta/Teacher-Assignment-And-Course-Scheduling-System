@@ -11,8 +11,8 @@ import lombok.*;
 @Entity
 @Table(name = "schedules",
         uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"section_id", "day", "period_id"}),
-                @UniqueConstraint(columnNames = {"room_id", "day", "period_id"})
+                @UniqueConstraint(columnNames = {"section_id", "day", "period"}),
+                @UniqueConstraint(columnNames = {"room_id", "day", "period"})
         })
 @Getter
 @Setter
@@ -27,8 +27,8 @@ public class Schedule {
     @Column(name = "id", length = 100)
     private String id;
 
-        @Enumerated(EnumType.STRING)
-        @Column(name = "semester", nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Column(name = "semester", nullable = false)
     private Semester semester;
 
     @ManyToOne
@@ -43,7 +43,7 @@ public class Schedule {
     @JoinColumn(name = "room_id", nullable = false)
     private Classroom classroom;
 
-    // as above for TimePreference; add @Enumerated if you want STRING storage
+    @Enumerated(EnumType.STRING)
     @Column(name = "day", nullable = false)
     private DayOfWeek day;
 

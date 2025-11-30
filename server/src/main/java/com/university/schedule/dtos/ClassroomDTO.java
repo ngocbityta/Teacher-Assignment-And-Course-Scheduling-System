@@ -19,7 +19,7 @@ public class ClassroomDTO {
     @NotNull(message = "Capacity is required")
     private Integer capacity;
 
-    private String status; // e.g., "active", "inactive", "maintenance"
+    private String status;
 
     @NotBlank(message = "Semester is required")
     private String semester;

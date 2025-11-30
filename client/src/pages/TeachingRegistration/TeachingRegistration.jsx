@@ -23,8 +23,10 @@ function genId(prefix = "id") {
 }
 
 const TeachingRegistration = () => {
-  const [list, setList] = useState([]);
-  const [teachers, setTeachers] = useState([]);
+  const [activeTab, setActiveTab] = useState("PENDING");
+  const [allRegistrations, setAllRegistrations] = useState([]);
+  const [allTeachers, setAllTeachers] = useState([]);
+  const [availableTeachers, setAvailableTeachers] = useState([]);
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -40,8 +42,8 @@ const TeachingRegistration = () => {
     semester: "",
     maxCourses: 1,
   });
-  const [timeGrid, setTimeGrid] = useState({}); // { day: { periodId: value } }
-  const [coursePrefs, setCoursePrefs] = useState({}); // { courseId: value }
+  const [timeGrid, setTimeGrid] = useState({});
+  const [coursePrefs, setCoursePrefs] = useState({});
 
   const loadAll = async () => {
     setLoading(true);
@@ -51,8 +53,8 @@ const TeachingRegistration = () => {
         teachersAPI.list(),
         coursesAPI.list(),
       ]);
-      setList(registrations || []);
-      setTeachers(teacherItems || []);
+      setAllRegistrations(registrations || []);
+      setAllTeachers(teacherItems || []);
       setCourses(coursePage?.items || []);
     } catch (err) {
       console.error(err);
@@ -65,6 +67,21 @@ const TeachingRegistration = () => {
   useEffect(() => {
     loadAll();
   }, []);
+
+  const loadAvailableTeachers = async () => {
+    const semester = getSelectedSemester();
+    if (!semester) {
+      alert("Vui lòng chọn học kỳ trong Cài đặt trước khi tạo đăng ký dạy học.");
+      return;
+    }
+    try {
+      const available = await teachersAPI.getAvailableForRegistration(semester);
+      setAvailableTeachers(available || []);
+    } catch (err) {
+      console.error(err);
+      alert("Lỗi khi tải danh sách giảng viên: " + err.message);
+    }
+  };
 
   const openDetail = async (id) => {
     if (!id) return;
@@ -86,7 +103,6 @@ const TeachingRegistration = () => {
     }
   };
 
-  // initialize timeGrid with zeros
   const initGrid = () => {
     const p = PERIODS || [];
     const grid = {};
@@ -97,12 +113,13 @@ const TeachingRegistration = () => {
     setTimeGrid(grid);
   };
 
-  const startCreate = () => {
+  const startCreate = async () => {
     setForm({ teacherId: "", maxCourses: 1 });
     initGrid();
     setCoursePrefs({});
     setStep(1);
     setShowCreate(true);
+    await loadAvailableTeachers();
   };
 
   const updateGridValue = (dayKey, periodId, value) => {
@@ -127,6 +144,42 @@ const TeachingRegistration = () => {
   const setCoursePrefValue = (courseId, v) =>
     setCoursePrefs((prev) => ({ ...prev, [courseId]: Number(v || 0) }));
 
+  const handleApprove = async (id) => {
+    if (!confirm("Bạn có chắc chắn muốn duyệt đăng ký này?")) return;
+    try {
+      await teachingRegistrationAPI.approve(id);
+      alert("Đã duyệt đăng ký thành công");
+      loadAll();
+    } catch (err) {
+      console.error(err);
+      alert("Lỗi khi duyệt đăng ký: " + err.message);
+    }
+  };
+
+  const handleReject = async (id) => {
+    if (!confirm("Bạn có chắc chắn muốn từ chối đăng ký này?")) return;
+    try {
+      await teachingRegistrationAPI.reject(id);
+      alert("Đã từ chối đăng ký thành công");
+      loadAll();
+    } catch (err) {
+      console.error(err);
+      alert("Lỗi khi từ chối đăng ký: " + err.message);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm("Bạn có chắc chắn muốn xóa đăng ký này? Hành động này không thể hoàn tác.")) return;
+    try {
+      await teachingRegistrationAPI.remove(id);
+      alert("Đã xóa đăng ký thành công");
+      loadAll();
+    } catch (err) {
+      console.error(err);
+      alert("Lỗi khi xóa đăng ký: " + err.message);
+    }
+  };
+
   const handleConfirmCreate = async () => {
     if (!form.teacherId) return alert("Vui lòng chọn giảng viên");
     if (Number(form.maxCourses || 0) < 1)
@@ -148,7 +201,6 @@ const TeachingRegistration = () => {
     try {
       await teachingRegistrationAPI.create(trPayload);
 
-      // create time preferences (only non-zero values)
       const timeCreates = [];
       for (const dayKey of Object.keys(timeGrid)) {
         for (const periodId of Object.keys(timeGrid[dayKey])) {
@@ -168,7 +220,6 @@ const TeachingRegistration = () => {
         }
       }
 
-      // create course preferences (only selected courses)
       const courseCreates = Object.entries(coursePrefs).map(([courseId, v]) => {
         const cp = {
           id: genId("cp"),
@@ -195,7 +246,7 @@ const TeachingRegistration = () => {
     }
   };
 
-  const registrations = list || [];
+  const registrations = (allRegistrations || []).filter((r) => r.status === activeTab);
 
   return (
     <div className={styles.container}>
@@ -206,6 +257,27 @@ const TeachingRegistration = () => {
         </button>
       </div>
 
+      <div className={styles.tabs}>
+        <button
+          className={`${styles.tab} ${activeTab === "PENDING" ? styles.tabActive : ""}`}
+          onClick={() => setActiveTab("PENDING")}
+        >
+          Đang chờ ({allRegistrations.filter((r) => r.status === "PENDING").length})
+        </button>
+        <button
+          className={`${styles.tab} ${activeTab === "APPROVED" ? styles.tabActive : ""}`}
+          onClick={() => setActiveTab("APPROVED")}
+        >
+          Đã duyệt ({allRegistrations.filter((r) => r.status === "APPROVED").length})
+        </button>
+        <button
+          className={`${styles.tab} ${activeTab === "REJECTED" ? styles.tabActive : ""}`}
+          onClick={() => setActiveTab("REJECTED")}
+        >
+          Đã từ chối ({allRegistrations.filter((r) => r.status === "REJECTED").length})
+        </button>
+      </div>
+
       {loading ? (
         <div className={styles.loading}>Đang tải...</div>
       ) : registrations.length === 0 ? (
@@ -213,7 +285,7 @@ const TeachingRegistration = () => {
       ) : (
         <div className={styles.cardGrid}>
           {registrations.map((r) => {
-            const teacher = teachers.find((t) => t.id === r.teacherId) || {};
+            const teacher = allTeachers.find((t) => t.id === r.teacherId) || {};
             return (
               <div key={r.id} className={styles.card}>
                 <div
@@ -271,6 +343,39 @@ const TeachingRegistration = () => {
                         </ul>
                       )}
                     </div>
+                    <div className={styles.actionButtons}>
+                      {r.status === "PENDING" && (
+                        <>
+                          <button
+                            className={styles.btnApprove}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleApprove(r.id);
+                            }}
+                          >
+                            ✓ Duyệt
+                          </button>
+                          <button
+                            className={styles.btnReject}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleReject(r.id);
+                            }}
+                          >
+                            ✕ Từ chối
+                          </button>
+                        </>
+                      )}
+                      <button
+                        className={styles.btnDelete}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(r.id);
+                        }}
+                      >
+                        🗑️ Xóa
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -279,7 +384,6 @@ const TeachingRegistration = () => {
         </div>
       )}
 
-      {/* Create Modal */}
       {showCreate && (
         <div className={styles.modal} onClick={() => setShowCreate(false)}>
           <div
@@ -309,12 +413,23 @@ const TeachingRegistration = () => {
                       }
                     >
                       <option value="">-- Chọn giảng viên --</option>
-                      {teachers.map((t) => (
-                        <option key={t.id} value={t.id}>
-                          {t.name}
+                      {availableTeachers.length === 0 ? (
+                        <option value="" disabled>
+                          Không có giảng viên nào khả dụng
                         </option>
-                      ))}
+                      ) : (
+                        availableTeachers.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.name}
+                          </option>
+                        ))
+                      )}
                     </select>
+                    {availableTeachers.length === 0 && (
+                      <div className={styles.smallNote}>
+                        Tất cả giảng viên đã có đăng ký cho học kỳ này
+                      </div>
+                    )}
                   </div>
                   <div className={styles.formGroup}>
                     <label>Số học phần tối đa *</label>
@@ -412,7 +527,7 @@ const TeachingRegistration = () => {
                     <div className={styles.previewItem}>
                       <span className={styles.previewLabel}>Giảng viên:</span>
                       <span className={styles.previewValue}>
-                        {teachers.find((t) => t.id === form.teacherId)?.name ||
+                        {availableTeachers.find((t) => t.id === form.teacherId)?.name ||
                           form.teacherId}
                       </span>
                     </div>

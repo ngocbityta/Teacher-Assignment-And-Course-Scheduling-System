@@ -1,5 +1,6 @@
 ------------------------------------------------------------
 -- PostgreSQL schema for university_schedule
+-- Initial migration: Create all tables and indexes
 ------------------------------------------------------------
 
 -- Enable pgcrypto for UUID generation
@@ -125,3 +126,4 @@ CREATE INDEX IF NOT EXISTS idx_course_preferences_teacher_semester
 
 CREATE INDEX IF NOT EXISTS idx_time_preferences_teacher_semester 
     ON time_preferences (teacher_id, semester);
+

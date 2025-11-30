@@ -1,0 +1,8 @@
+# Flyway Maven Plugin Configuration
+# Copy this file to flyway.properties and update with your database credentials
+# This file is for Maven plugin usage only. Spring Boot uses application.properties
+
+flyway.url=jdbc:postgresql://localhost:5432/university_schedule
+flyway.user=postgres
+flyway.password=your_password
+

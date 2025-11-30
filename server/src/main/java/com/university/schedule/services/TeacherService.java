@@ -6,12 +6,16 @@ import org.springframework.data.domain.Pageable;
 import com.university.schedule.dtos.TeacherDTO;
 import com.university.schedule.enums.Semester;
 
+import java.util.List;
+
 public interface TeacherService {
     TeacherDTO create(TeacherDTO dto);
 
     TeacherDTO getById(String id);
 
     Page<TeacherDTO> search(String keyword, Semester semester, Pageable pageable);
+    
+    List<TeacherDTO> getAvailableForRegistration(Semester semester);
 
     TeacherDTO update(String id, TeacherDTO dto);
 

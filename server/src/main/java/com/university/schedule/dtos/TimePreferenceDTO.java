@@ -12,24 +12,24 @@ import java.time.DayOfWeek;
 @AllArgsConstructor
 @Builder
 public class TimePreferenceDTO {
-    @NotBlank
+    @NotBlank(message = "Id is required")
     private String id;
 
-    @NotBlank
+    @NotBlank(message = "Teacher ID is required")
     private String teacherId;
 
-    @NotBlank
+    @NotBlank(message = "Semester is required")
     private String semester;
 
-    @NotNull
+    @NotNull(message = "Period is required")
     private Period period;
 
-    @NotNull
+    @NotNull(message = "Day is required")
     private DayOfWeek day;
 
-    @NotNull
+    @NotBlank(message = "Teaching registration ID is required")
     private String teachingRegistrationId;
 
-    @NotNull
+    @NotNull(message = "Preference value is required")
     private Integer preferenceValue;
 }

@@ -2,6 +2,7 @@ package com.university.schedule.services;
 
 import com.university.schedule.dtos.TeachingRegistrationDTO;
 import com.university.schedule.entities.*;
+import com.university.schedule.enums.RegistrationStatus;
 import com.university.schedule.exceptions.NotFoundException;
 import com.university.schedule.mappers.TeachingRegistrationMapper;
 import com.university.schedule.repositories.*;
@@ -56,6 +57,30 @@ public class TeachingRegistrationServiceImpl implements TeachingRegistrationServ
     @Transactional(readOnly = true)
     public List<TeachingRegistrationDTO> getAll() {
         return teachingRegistrationRepository.findAll().stream().map(mapper::toDto).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<TeachingRegistrationDTO> getByStatus(RegistrationStatus status) {
+        return teachingRegistrationRepository.findByStatus(status).stream()
+                .map(mapper::toDto)
+                .toList();
+    }
+
+    @Override
+    public TeachingRegistrationDTO approve(String id) {
+        TeachingRegistration entity = teachingRegistrationRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("TeachingRegistration not found with id " + id));
+        entity.setStatus(RegistrationStatus.APPROVED);
+        return mapper.toDto(teachingRegistrationRepository.save(entity));
+    }
+
+    @Override
+    public TeachingRegistrationDTO reject(String id) {
+        TeachingRegistration entity = teachingRegistrationRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("TeachingRegistration not found with id " + id));
+        entity.setStatus(RegistrationStatus.REJECTED);
+        return mapper.toDto(teachingRegistrationRepository.save(entity));
     }
 
     @Override

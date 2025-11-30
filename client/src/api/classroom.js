@@ -1,4 +1,4 @@
-import { apiRequest, toItemArray } from "../lib/apiClient";
+import { apiRequest, toItemArray, withSemester } from "../lib/apiClient";
 
 export const classroomAPI = {
   list: async (params = {}) =>
@@ -15,9 +15,9 @@ export const classroomAPI = {
     }),
   get: (id) => apiRequest(`/classrooms/${id}`),
   create: (payload) =>
-    apiRequest("/classrooms", { method: "POST", body: payload }),
+    apiRequest("/classrooms", { method: "POST", body: withSemester(payload) }),
   update: (id, payload) =>
-    apiRequest(`/classrooms/${id}`, { method: "PUT", body: payload }),
+    apiRequest(`/classrooms/${id}`, { method: "PUT", body: withSemester(payload) }),
   remove: (id) => apiRequest(`/classrooms/${id}`, { method: "DELETE" }),
 };
 

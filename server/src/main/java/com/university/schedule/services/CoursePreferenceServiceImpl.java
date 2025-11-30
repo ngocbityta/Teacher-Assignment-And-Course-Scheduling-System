@@ -4,12 +4,14 @@ import com.university.schedule.dtos.CoursePreferenceDTO;
 import com.university.schedule.entities.Course;
 import com.university.schedule.entities.CoursePreference;
 import com.university.schedule.entities.Teacher;
+import com.university.schedule.entities.TeachingRegistration;
 import com.university.schedule.enums.Semester;
 import com.university.schedule.exceptions.NotFoundException;
 import com.university.schedule.mappers.CoursePreferenceMapper;
 import com.university.schedule.repositories.CoursePreferenceRepository;
 import com.university.schedule.repositories.CourseRepository;
 import com.university.schedule.repositories.TeacherRepository;
+import com.university.schedule.repositories.TeachingRegistrationRepository;
 import com.university.schedule.utils.SemesterUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -27,6 +29,7 @@ public class CoursePreferenceServiceImpl implements CoursePreferenceService {
     private final CoursePreferenceMapper mapper;
     private final TeacherRepository teacherRepository;
     private final CourseRepository courseRepository;
+    private final TeachingRegistrationRepository teachingRegistrationRepository;
 
     @Override
     public CoursePreferenceDTO create(CoursePreferenceDTO dto) {
@@ -42,10 +45,13 @@ public class CoursePreferenceServiceImpl implements CoursePreferenceService {
                 .orElseThrow(() -> new NotFoundException("Teacher not found with id " + dto.getTeacherId()));
         Course course = courseRepository.findById(dto.getCourseId())
                 .orElseThrow(() -> new NotFoundException("Course not found with id " + dto.getCourseId()));
+        TeachingRegistration teachingRegistration = teachingRegistrationRepository.findById(dto.getTeachingRegistrationId())
+                .orElseThrow(() -> new NotFoundException("TeachingRegistration not found with id " + dto.getTeachingRegistrationId()));
 
         entity.setSemester(semester);
         entity.setTeacher(teacher);
         entity.setCourse(course);
+        entity.setTeachingRegistration(teachingRegistration);
 
         CoursePreference saved = coursePreferenceRepository.save(entity);
         return mapper.toDto(saved);
@@ -79,10 +85,13 @@ public class CoursePreferenceServiceImpl implements CoursePreferenceService {
                 .orElseThrow(() -> new NotFoundException("Teacher not found with id " + dto.getTeacherId()));
         Course course = courseRepository.findById(dto.getCourseId())
                 .orElseThrow(() -> new NotFoundException("Course not found with id " + dto.getCourseId()));
+        TeachingRegistration teachingRegistration = teachingRegistrationRepository.findById(dto.getTeachingRegistrationId())
+                .orElseThrow(() -> new NotFoundException("TeachingRegistration not found with id " + dto.getTeachingRegistrationId()));
 
         entity.setSemester(semester);
         entity.setTeacher(teacher);
         entity.setCourse(course);
+        entity.setTeachingRegistration(teachingRegistration);
         entity.setPreferenceValue(dto.getPreferenceValue());
 
         return mapper.toDto(coursePreferenceRepository.save(entity));

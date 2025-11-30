@@ -2,16 +2,22 @@ package com.university.schedule.services;
 
 import com.university.schedule.dtos.TeacherDTO;
 import com.university.schedule.entities.Teacher;
+import com.university.schedule.enums.RegistrationStatus;
 import com.university.schedule.enums.Semester;
 import com.university.schedule.exceptions.NotFoundException;
 import com.university.schedule.mappers.TeacherMapper;
 import com.university.schedule.repositories.TeacherRepository;
+import com.university.schedule.repositories.TeachingRegistrationRepository;
 import com.university.schedule.utils.SemesterUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
@@ -20,6 +26,7 @@ public class TeacherServiceImpl implements TeacherService {
 
     private final TeacherRepository teacherRepository;
     private final TeacherMapper teacherMapper;
+    private final TeachingRegistrationRepository teachingRegistrationRepository;
 
     @Override
     public TeacherDTO create(TeacherDTO dto) {
@@ -58,6 +65,22 @@ public class TeacherServiceImpl implements TeacherService {
             }
         }
         return page.map(teacherMapper::toDto);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<TeacherDTO> getAvailableForRegistration(Semester semester) {
+        // Chỉ loại trừ teachers có registration APPROVED hoặc PENDING
+        // Cho phép teachers có registration REJECTED tạo lại
+        List<String> registeredTeacherIds = teachingRegistrationRepository.findTeacherIdsBySemesterAndStatuses(
+            semester, 
+            Arrays.asList(RegistrationStatus.APPROVED, RegistrationStatus.PENDING)
+        );
+        List<Teacher> allTeachers = teacherRepository.findBySemester(semester, Pageable.unpaged()).getContent();
+        return allTeachers.stream()
+                .filter(teacher -> !registeredTeacherIds.contains(teacher.getId()))
+                .map(teacherMapper::toDto)
+                .collect(Collectors.toList());
     }
 
     @Override

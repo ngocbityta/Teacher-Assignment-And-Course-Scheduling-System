@@ -29,7 +29,6 @@ public class SectionServiceImpl implements SectionService {
         }
         Section entity = sectionMapper.toEntity(dto);
 
-        // map courseId -> Course entity
         Course course = courseRepository.findById(dto.getCourseId())
                 .orElseThrow(() -> new NotFoundException("Course not found with id " + dto.getCourseId()));
         entity.setCourse(course);
@@ -61,6 +60,8 @@ public class SectionServiceImpl implements SectionService {
                 .orElseThrow(() -> new NotFoundException("Section not found with id " + id));
 
         entity.setName(dto.getName());
+        entity.setPeriodRequired(dto.getPeriodRequired());
+        entity.setRequiredSeats(dto.getRequiredSeats());
 
         Course course = courseRepository.findById(dto.getCourseId())
                 .orElseThrow(() -> new NotFoundException("Course not found with id " + dto.getCourseId()));

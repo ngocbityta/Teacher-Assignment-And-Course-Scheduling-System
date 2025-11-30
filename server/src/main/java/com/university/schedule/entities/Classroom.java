@@ -26,7 +26,7 @@ public class Classroom {
     private Integer capacity;
 
     @Column(name = "status", length = 50)
-    private String status; // e.g., "active", "inactive", "maintenance"
+    private String status;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "semester", nullable = false)

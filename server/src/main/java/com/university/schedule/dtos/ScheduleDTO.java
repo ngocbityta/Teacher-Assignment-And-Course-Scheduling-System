@@ -14,24 +14,24 @@ import com.university.schedule.enums.Period;
 @AllArgsConstructor
 @Builder
 public class ScheduleDTO {
-    @NotBlank
+    @NotBlank(message = "Id is required")
     private String id;
 
-    @NotBlank
+    @NotBlank(message = "Semester is required")
     private String semester;
 
-    @NotBlank
+    @NotBlank(message = "Teacher ID is required")
     private String teacherId;
 
-    @NotBlank
+    @NotBlank(message = "Section ID is required")
     private String sectionId;
 
-    @NotBlank
+    @NotBlank(message = "Classroom ID is required")
     private String classroomId;
 
-    @NotNull
+    @NotNull(message = "Day is required")
     private DayOfWeek day;
 
-    @NotNull
+    @NotNull(message = "Period is required")
     private Period period;
 }

@@ -8,11 +8,9 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface SectionMapper {
 
-    // Entity → DTO
     @Mapping(target = "courseId", source = "course.id")
     SectionDTO toDto(Section entity);
 
-    // DTO → Entity
     @Mapping(target = "course", ignore = true)
     Section toEntity(SectionDTO dto);
 }

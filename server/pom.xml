@@ -15,6 +15,10 @@
     <description>Teacher Assignment and Course Scheduling System</description>
     <properties>
         <java.version>25</java.version>
+        <!-- Flyway Maven plugin properties (optional, for manual execution only) -->
+        <flyway.url>jdbc:postgresql://localhost:5432/university_schedule</flyway.url>
+        <flyway.user>postgres</flyway.user>
+        <flyway.password>your_password</flyway.password>
     </properties>
     <dependencies>
         <dependency>
@@ -83,6 +87,14 @@
             <version>0.11.5</version>
             <scope>runtime</scope>
         </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -95,6 +107,12 @@
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok-mapstruct-binding</artifactId>
+                            <version>0.2.0</version>
                         </path>
                         <path>
                             <groupId>org.mapstruct</groupId>
@@ -115,6 +133,36 @@
                         </exclude>
                     </excludes>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-maven-plugin</artifactId>
+                <configuration>
+                    <!-- Configuration can be overridden via command line or properties -->
+                    <!-- Example: mvn flyway:validate -Dflyway.url=jdbc:postgresql://localhost:5432/university_schedule -->
+                    <url>${flyway.url}</url>
+                    <user>${flyway.user}</user>
+                    <password>${flyway.password}</password>
+                    <locations>
+                        <location>classpath:db/migration</location>
+                    </locations>
+                    <validateOnMigrate>true</validateOnMigrate>
+                    <validateMigrationNaming>true</validateMigrationNaming>
+                    <baselineOnMigrate>true</baselineOnMigrate>
+                    <outOfOrder>false</outOfOrder>
+                </configuration>
+                <executions>
+                    <!-- Validate migrations on compile -->
+                    <!-- Note: This requires flyway.url, flyway.user, flyway.password to be set -->
+                    <!-- For normal usage, Spring Boot will handle Flyway migrations automatically -->
+                    <execution>
+                        <id>validate-migrations</id>
+                        <phase>none</phase>
+                        <goals>
+                            <goal>validate</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

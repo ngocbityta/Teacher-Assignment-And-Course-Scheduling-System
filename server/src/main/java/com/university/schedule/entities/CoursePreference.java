@@ -7,15 +7,18 @@ import lombok.*;
 @Entity
 @Table(name = "course_preferences",
         uniqueConstraints = {@UniqueConstraint(columnNames = {"teacher_id", "course_id"})})
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class CoursePreference {
 
     @Id
+    @EqualsAndHashCode.Include
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(length = 36)
+    @Column(columnDefinition = "uuid")
     private String id;
 
     @Enumerated(EnumType.STRING)
@@ -27,7 +30,7 @@ public class CoursePreference {
     private Teacher teacher;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "teaching_registration_id", nullable = false)
+    @JoinColumn(name = "teaching_registration_id", nullable = false, referencedColumnName = "id", columnDefinition = "varchar(100)")
     private TeachingRegistration teachingRegistration;
 
     @ManyToOne(fetch = FetchType.LAZY)

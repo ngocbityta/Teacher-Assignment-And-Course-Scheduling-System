@@ -12,18 +12,18 @@ import lombok.*;
 @Builder
 public class TeachingRegistrationDTO {
 
-    @NotBlank
+    @NotBlank(message = "Id is required")
     private String id;
 
-    @NotBlank
+    @NotBlank(message = "Teacher ID is required")
     private String teacherId;
 
-    @NotBlank
+    @NotBlank(message = "Semester is required")
     private String semester;
 
-    @NotNull
+    @NotNull(message = "Max courses is required")
     private Integer maxCourses;
 
-    @NotNull
+    @NotNull(message = "Status is required")
     private RegistrationStatus status;
 }

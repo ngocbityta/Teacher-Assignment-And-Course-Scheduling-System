@@ -10,21 +10,21 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class CoursePreferenceDTO {
-    @NotBlank
+    @NotBlank(message = "Id is required")
     private String id;
 
-    @NotBlank
+    @NotBlank(message = "Semester is required")
     private String semester;
 
-    @NotBlank
+    @NotBlank(message = "Teacher ID is required")
     private String teacherId;
 
-    @NotNull
+    @NotBlank(message = "Teaching registration ID is required")
     private String teachingRegistrationId;
 
-    @NotBlank
+    @NotBlank(message = "Course ID is required")
     private String courseId;
 
-    @NotNull
+    @NotNull(message = "Preference value is required")
     private Integer preferenceValue;
 }
