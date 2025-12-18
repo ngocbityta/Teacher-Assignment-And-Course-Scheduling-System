@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { toast } from "react-toastify";
 import styles from "./Classrooms.module.css";
 import { classroomAPI } from "../../api/classroom";
 
@@ -9,12 +10,10 @@ const Classrooms = () => {
   const [loading, setLoading] = useState(false);
   const [active, setActive] = useState(Tabs.LIST);
 
-  // form state
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ id: "", name: "", capacity: 30, status: "active" });
 
-  // detail view state
   const [selectedClassroom, setSelectedClassroom] = useState(null);
 
   const load = async () => {
@@ -24,7 +23,7 @@ const Classrooms = () => {
       setClassrooms(data || []);
     } catch (err) {
       console.error(err);
-      alert("Failed to load classrooms: " + err.message);
+      toast.error("Không thể tải danh sách phòng học: " + err.message);
     } finally {
       setLoading(false);
     }
@@ -52,13 +51,14 @@ const Classrooms = () => {
   };
 
   const handleDeleteClick = async (id) => {
-    if (!confirm("Xóa phòng học này?")) return;
+    if (!window.confirm("Xóa phòng học này?")) return;
     try {
       await classroomAPI.remove(id);
+      toast.success("Xóa phòng học thành công");
       load();
     } catch (err) {
       console.error(err);
-      alert("Xóa thất bại: " + err.message);
+      toast.error("Xóa thất bại: " + err.message);
     }
   };
 
@@ -69,17 +69,19 @@ const Classrooms = () => {
         await classroomAPI.update(editing, form);
       } else {
         if (!form.id || !form.name || !form.capacity) {
-          return alert("Vui lòng nhập mã, tên, và sức chứa phòng học.");
+          toast.warning("Vui lòng nhập mã, tên, và sức chứa phòng học.");
+          return;
         }
         await classroomAPI.create(form);
       }
+      toast.success(editing ? "Cập nhật phòng học thành công" : "Thêm phòng học thành công");
       setShowForm(false);
       setEditing(null);
       setForm({ id: "", name: "", capacity: 30, status: "active" });
       load();
     } catch (err) {
       console.error(err);
-      alert("Lưu thất bại: " + err.message);
+      toast.error("Lưu thất bại: " + err.message);
     }
   };
 
@@ -136,7 +138,7 @@ const Classrooms = () => {
           <div>
             <div className={styles.actionButtons}>
               <button onClick={handleAddClick} className={styles.btnAdd}>
-                ➕ Thêm phòng học
+                Thêm phòng học
               </button>
             </div>
 
@@ -155,34 +157,15 @@ const Classrooms = () => {
                       onClick={() => setSelectedClassroom(c)}
                     >
                       <div className={styles.cardHeader}>
-                        <h3>{c.name}</h3>
+                        <div>
+                          <h3>{c.name}</h3>
+                          <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#718096" }}>
+                            {c.capacity} chỗ
+                          </p>
+                        </div>
                         <span className={`${styles.statusBadge} ${getStatusColor(c.status)}`}>
                           {getStatusLabel(c.status)}
                         </span>
-                      </div>
-                      <div className={styles.cardBody}>
-                        <p><strong>Mã:</strong> {id}</p>
-                        <p><strong>Sức chứa:</strong> {c.capacity} chỗ</p>
-                      </div>
-                      <div className={styles.cardFooter}>
-                        <button
-                          className={styles.btnEdit}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditClick(c);
-                          }}
-                        >
-                          Sửa
-                        </button>
-                        <button
-                          className={styles.btnDelete}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteClick(id);
-                          }}
-                        >
-                          Xóa
-                        </button>
                       </div>
                     </div>
                   );
@@ -190,14 +173,13 @@ const Classrooms = () => {
               </div>
             )}
 
-            {/* Detail Modal */}
             {selectedClassroom && (
               <div className={styles.modal} onClick={() => setSelectedClassroom(null)}>
                 <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
                   <div className={styles.modalHeader}>
                     <h2>{selectedClassroom.name}</h2>
                     <button className={styles.closeBtn} onClick={() => setSelectedClassroom(null)}>
-                      ✕
+                      ×
                     </button>
                   </div>
                   <div className={styles.modalBody}>
@@ -228,7 +210,7 @@ const Classrooms = () => {
                         setSelectedClassroom(null);
                       }}
                     >
-                      Chỉnh sửa
+                      Sửa
                     </button>
                     <button
                       className={styles.btnDelete}
@@ -244,14 +226,13 @@ const Classrooms = () => {
               </div>
             )}
 
-            {/* Add/Edit Form Modal */}
             {showForm && (
               <div className={styles.modal} onClick={() => setShowForm(false)}>
                 <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
                   <div className={styles.modalHeader}>
                     <h2>{editing ? "Chỉnh sửa phòng học" : "Thêm phòng học mới"}</h2>
                     <button className={styles.closeBtn} onClick={() => setShowForm(false)}>
-                      ✕
+                      ×
                     </button>
                   </div>
                   <form onSubmit={submitForm}>
@@ -326,7 +307,7 @@ const Classrooms = () => {
         {active === Tabs.STATS && (
           <div className={styles.statsContainer}>
             <div className={styles.statCard}>
-              <div className={styles.statIcon}>🏫</div>
+              <div className={styles.statIcon}></div>
               <div className={styles.statContent}>
                 <h3>Tổng phòng</h3>
                 <p className={styles.statNumber}>{stats.total}</p>
@@ -334,7 +315,7 @@ const Classrooms = () => {
             </div>
 
             <div className={styles.statCard}>
-              <div className={styles.statIcon}>✅</div>
+              <div className={styles.statIcon}></div>
               <div className={styles.statContent}>
                 <h3>Đang hoạt động</h3>
                 <p className={styles.statNumber}>{stats.active}</p>
@@ -342,7 +323,7 @@ const Classrooms = () => {
             </div>
 
             <div className={styles.statCard}>
-              <div className={styles.statIcon}>⛔</div>
+              <div className={styles.statIcon}></div>
               <div className={styles.statContent}>
                 <h3>Không hoạt động</h3>
                 <p className={styles.statNumber}>{stats.inactive}</p>
@@ -350,7 +331,7 @@ const Classrooms = () => {
             </div>
 
             <div className={styles.statCard}>
-              <div className={styles.statIcon}>🔧</div>
+              <div className={styles.statIcon}></div>
               <div className={styles.statContent}>
                 <h3>Bảo trì</h3>
                 <p className={styles.statNumber}>{stats.maintenance}</p>
@@ -358,7 +339,7 @@ const Classrooms = () => {
             </div>
 
             <div className={styles.statCard} style={{ gridColumn: "1 / -1" }}>
-              <div className={styles.statIcon}>👥</div>
+              <div className={styles.statIcon}></div>
               <div className={styles.statContent}>
                 <h3>Tổng sức chứa</h3>
                 <p className={styles.statNumber}>{stats.totalCapacity}</p>

@@ -34,4 +34,9 @@ public class ScheduleDTO {
 
     @NotNull(message = "Period is required")
     private Period period;
+
+    // Additional fields for display
+    private String teacherName;
+    private String sectionName;
+    private String classroomName;
 }

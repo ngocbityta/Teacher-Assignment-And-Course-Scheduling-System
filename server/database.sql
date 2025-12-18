@@ -2,8 +2,7 @@
 -- PostgreSQL schema for university_schedule
 ------------------------------------------------------------
 
--- Enable pgcrypto for UUID generation
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+-- Note: pgcrypto extension removed as we no longer use UUID generation
 
 -- ===============================================
 -- semesters
@@ -22,7 +21,8 @@ CREATE TABLE IF NOT EXISTS teachers (
     id varchar(100) PRIMARY KEY,
     name varchar NOT NULL,
     status varchar(50),
-    semester varchar(100) NOT NULL
+    semester varchar(100) NOT NULL,
+    avatar varchar(500)
 );
 
 -- ===============================================
@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS teaching_registrations (
 -- course_preferences
 -- ===============================================
 CREATE TABLE IF NOT EXISTS course_preferences (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    id varchar(100) PRIMARY KEY,
     semester varchar(100),
     teacher_id varchar(100) REFERENCES teachers(id) ON DELETE CASCADE,
     teaching_registration_id varchar(100) NOT NULL REFERENCES teaching_registrations(id) ON DELETE CASCADE,

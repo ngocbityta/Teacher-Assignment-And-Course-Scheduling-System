@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { toast } from "react-toastify";
 import styles from "./Teachers.module.css";
 import { teachersAPI } from "../../api/teachers";
 
@@ -9,12 +10,10 @@ const Teachers = () => {
   const [loading, setLoading] = useState(false);
   const [active, setActive] = useState(Tabs.LIST);
 
-  // form state
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ id: "", name: "", status: "active", avatar: "" });
 
-  // detail view state
   const [selectedTeacher, setSelectedTeacher] = useState(null);
 
   const load = async () => {
@@ -24,7 +23,7 @@ const Teachers = () => {
       setTeachers(data || []);
     } catch (err) {
       console.error(err);
-      alert("Failed to load teachers: " + err.message);
+      toast.error("Không thể tải danh sách giảng viên: " + err.message);
     } finally {
       setLoading(false);
     }
@@ -47,13 +46,14 @@ const Teachers = () => {
   };
 
   const handleDeleteClick = async (id) => {
-    if (!confirm("Xóa giảng viên này?")) return;
+    if (!window.confirm("Xóa giảng viên này?")) return;
     try {
       await teachersAPI.remove(id);
+      toast.success("Xóa giảng viên thành công");
       load();
     } catch (err) {
       console.error(err);
-      alert("Xóa thất bại: " + err.message);
+      toast.error("Xóa thất bại: " + err.message);
     }
   };
 
@@ -63,16 +63,20 @@ const Teachers = () => {
       if (editing) {
         await teachersAPI.update(editing, form);
       } else {
-        if (!form.id || !form.name) return alert("Vui lòng nhập mã và tên giảng viên.");
+        if (!form.id || !form.name) {
+          toast.warning("Vui lòng nhập mã và tên giảng viên.");
+          return;
+        }
         await teachersAPI.create(form);
       }
+      toast.success(editing ? "Cập nhật giảng viên thành công" : "Thêm giảng viên thành công");
       setShowForm(false);
       setEditing(null);
       setForm({ id: "", name: "", status: "active", avatar: "" });
       load();
     } catch (err) {
       console.error(err);
-      alert("Lưu thất bại: " + err.message);
+      toast.error("Lưu thất bại: " + err.message);
     }
   };
 
@@ -128,7 +132,7 @@ const Teachers = () => {
           <div>
             <div className={styles.actionButtons}>
               <button onClick={handleAddClick} className={styles.btnAdd}>
-                ➕ Thêm giảng viên
+                Thêm giảng viên
               </button>
             </div>
 
@@ -166,43 +170,19 @@ const Teachers = () => {
                           {getStatusLabel(t.status)}
                         </span>
                       </div>
-                      <div className={styles.cardBody}>
-                        <p><strong>Mã:</strong> {id}</p>
-                      </div>
-                      <div className={styles.cardFooter}>
-                        <button
-                          className={styles.btnEdit}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditClick(t);
-                          }}
-                        >
-                          Sửa
-                        </button>
-                        <button
-                          className={styles.btnDelete}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteClick(id);
-                          }}
-                        >
-                          Xóa
-                        </button>
-                      </div>
                     </div>
                   );
                 })}
               </div>
             )}
 
-            {/* Detail Modal */}
             {selectedTeacher && (
               <div className={styles.modal} onClick={() => setSelectedTeacher(null)}>
                   <div className={`${styles.modalContent} ${styles.modalLarge}`} onClick={(e) => e.stopPropagation()}>
                   <div className={styles.modalHeader}>
                     <h2>{selectedTeacher.name}</h2>
                     <button className={styles.closeBtn} onClick={() => setSelectedTeacher(null)}>
-                      ✕
+                      ×
                     </button>
                   </div>
                   <div className={styles.modalBody}>
@@ -250,14 +230,13 @@ const Teachers = () => {
               </div>
             )}
 
-            {/* Add/Edit Form Modal */}
             {showForm && (
               <div className={styles.modal} onClick={() => setShowForm(false)}>
                   <div className={`${styles.modalContent} ${styles.modalLarge}`} onClick={(e) => e.stopPropagation()}>
                   <div className={styles.modalHeader}>
                     <h2>{editing ? "Chỉnh sửa giảng viên" : "Thêm giảng viên mới"}</h2>
                     <button className={styles.closeBtn} onClick={() => setShowForm(false)}>
-                      ✕
+                      ×
                     </button>
                   </div>
                   <form onSubmit={submitForm}>
@@ -335,7 +314,7 @@ const Teachers = () => {
         {active === Tabs.STATS && (
           <div className={styles.statsContainer}>
             <div className={styles.statCard}>
-              <div className={styles.statIcon}>👥</div>
+              <div className={styles.statIcon}></div>
               <div className={styles.statContent}>
                 <h3>Tổng cộng</h3>
                 <p className={styles.statNumber}>{stats.total}</p>
@@ -343,7 +322,7 @@ const Teachers = () => {
             </div>
 
             <div className={styles.statCard}>
-              <div className={styles.statIcon}>✅</div>
+              <div className={styles.statIcon}></div>
               <div className={styles.statContent}>
                 <h3>Đang hoạt động</h3>
                 <p className={styles.statNumber}>{stats.active}</p>
@@ -351,7 +330,7 @@ const Teachers = () => {
             </div>
 
             <div className={styles.statCard}>
-              <div className={styles.statIcon}>⛔</div>
+              <div className={styles.statIcon}></div>
               <div className={styles.statContent}>
                 <h3>Không hoạt động</h3>
                 <p className={styles.statNumber}>{stats.inactive}</p>
@@ -359,7 +338,7 @@ const Teachers = () => {
             </div>
 
             <div className={styles.statCard}>
-              <div className={styles.statIcon}>🏖️</div>
+              <div className={styles.statIcon}></div>
               <div className={styles.statContent}>
                 <h3>Tạm nghỉ</h3>
                 <p className={styles.statNumber}>{stats.onLeave}</p>

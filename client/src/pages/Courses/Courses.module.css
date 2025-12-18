@@ -263,17 +263,36 @@
   border-top: 1px solid #e2e8f0;
   display: flex;
   gap: 12px;
+  justify-content: flex-end;
 }
 
 .modalFooter button {
-  flex: 1;
-  padding: 12px;
+  padding: 10px 18px;
   border: none;
   border-radius: 6px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 0.9rem;
+  min-width: 100px;
+}
+
+.modalFooter .btnEdit {
+  background: #3182ce;
+  color: white;
+}
+
+.modalFooter .btnEdit:hover {
+  background: #2c5282;
+}
+
+.modalFooter .btnDelete {
+  background: #f56565;
+  color: white;
+}
+
+.modalFooter .btnDelete:hover {
+  background: #e53e3e;
 }
 
 /* Form */

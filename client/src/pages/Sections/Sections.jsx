@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 import styles from "./Sections.module.css";
 import { sectionAPI } from "../../api/section";
 import { coursesAPI } from "../../api/courses";
@@ -13,12 +14,8 @@ const Sections = () => {
   const [activeTab, setActiveTab] = useState(Tabs.LIST);
   const [showFormModal, setShowFormModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [selectedSection, setSelectedSection] = useState(null);
   const [form, setForm] = useState({ id: "", name: "", courseId: "", periodRequired: "", requiredSeats: "" });
-  const [collapsedGroups, setCollapsedGroups] = useState({});
-
-  const toggleGroup = (courseId) => {
-    setCollapsedGroups((prev) => ({ ...prev, [courseId]: !prev[courseId] }));
-  };
 
   const load = async () => {
     setLoading(true);
@@ -31,7 +28,7 @@ const Sections = () => {
       setCourses(courseItems || []);
     } catch (err) {
       console.error(err);
-      alert("Failed to load data: " + err.message);
+      toast.error("Không thể tải dữ liệu: " + err.message);
     } finally {
       setLoading(false);
     }
@@ -62,7 +59,7 @@ const Sections = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.id || !form.name || !form.courseId || form.periodRequired === "" || form.requiredSeats === "") {
-      alert("Vui lòng điền đủ thông tin");
+      toast.warning("Vui lòng điền đủ thông tin");
       return;
     }
     try {
@@ -73,23 +70,25 @@ const Sections = () => {
         const payload = sem ? { ...form, semester: sem } : form;
         await sectionAPI.create(payload);
       }
+      toast.success(editingId ? "Cập nhật học phần thành công" : "Thêm học phần thành công");
       setShowFormModal(false);
       setForm({ id: "", name: "", courseId: "", periodRequired: "", requiredSeats: "" });
       load();
     } catch (err) {
       console.error(err);
-      alert((editingId ? "Cập nhật" : "Tạo") + " thất bại: " + err.message);
+      toast.error((editingId ? "Cập nhật" : "Tạo") + " thất bại: " + err.message);
     }
   };
 
   const handleDelete = async (id) => {
-    if (!confirm("Xác nhận xóa học phần này?")) return;
+    if (!window.confirm("Xác nhận xóa học phần này?")) return;
     try {
       await sectionAPI.remove(id);
+      toast.success("Xóa học phần thành công");
       load();
     } catch (err) {
       console.error(err);
-      alert("Delete failed: " + err.message);
+      toast.error("Xóa thất bại: " + err.message);
     }
   };
 
@@ -104,7 +103,6 @@ const Sections = () => {
     totalPeriods: sections.reduce((sum, s) => sum + (s.periodRequired || 0), 0),
   };
 
-  // group sections by courseId
   const grouped = sections.reduce((acc, s) => {
     const key = s.courseId || "_unknown";
     if (!acc[key]) acc[key] = [];
@@ -141,7 +139,7 @@ const Sections = () => {
         <>
           <div className={styles.actionButtons}>
             <button className={styles.btnAdd} onClick={handleOpenForm}>
-              ➕ Thêm học phần
+              Thêm học phần
             </button>
           </div>
 
@@ -150,58 +148,34 @@ const Sections = () => {
           ) : sections.length === 0 ? (
             <div className={styles.empty}>Chưa có học phần nào</div>
           ) : (
-            <div className={styles.cardGrid}>
+            <div className={styles.courseGroupsContainer}>
               {courseGroups.map((group) => (
-                <div key={group.courseId} className={styles.groupContainer}>
-                  <div className={styles.groupHeader}>
-                    <div className={styles.groupTitle}>
-                      {group.courseName}
-                      <span className={styles.groupMeta}> ({group.items.length})</span>
-                    </div>
-                    <button className={styles.collapseBtn} onClick={() => toggleGroup(group.courseId)}>
-                      {collapsedGroups[group.courseId] ? "▸" : "▾"}
-                    </button>
+                <div key={group.courseId} className={styles.courseBox}>
+                  <div className={styles.courseBoxHeader}>
+                    <h3 className={styles.courseName}>{group.courseName}</h3>
+                    <span className={styles.courseCount}>{group.items.length} học phần</span>
                   </div>
-
-                  {!collapsedGroups[group.courseId] && (
-                    <div className={styles.groupContent}>
-                      {group.items.map((section) => (
-                        <div key={section.id} className={styles.card}>
-                          <div className={styles.cardHeader}>
-                            <h3>{section.name}</h3>
+                  <div className={styles.sectionsList}>
+                    {group.items.map((section) => (
+                      <div 
+                        key={section.id} 
+                        className={styles.sectionItem}
+                        onClick={() => setSelectedSection(section)}
+                      >
+                        <div className={styles.sectionItemContent}>
+                          <div className={styles.sectionInfo}>
+                            <h4 className={styles.sectionName}>{section.name}</h4>
+                            <div className={styles.sectionMeta}>
+                              <span className={styles.metaItem}>{section.periodRequired} tiết</span>
+                              <span className={styles.metaDivider}>•</span>
+                              <span className={styles.metaItem}>{section.requiredSeats} chỗ</span>
+                            </div>
                           </div>
-                          <div className={styles.cardBody}>
-                            <p>
-                              <strong>Mã:</strong> 
-                              <span className={styles.codeValue}>{section.id}</span>
-                            </p>
-                            <p>
-                              <strong>⏱️ Tiết học:</strong> 
-                              <span className={styles.badge}>{section.periodRequired} tiết</span>
-                            </p>
-                            <p>
-                              <strong>🪑 Chỗ ngồi:</strong> 
-                              <span className={styles.badge}>{section.requiredSeats} chỗ</span>
-                            </p>
-                          </div>
-                          <div className={styles.cardFooter}>
-                            <button
-                              className={styles.btnEdit}
-                              onClick={() => handleEdit(section)}
-                            >
-                              Sửa
-                            </button>
-                            <button
-                              className={styles.btnDelete}
-                              onClick={() => handleDelete(section.id)}
-                            >
-                              Xóa
-                            </button>
-                          </div>
+                          <div className={styles.sectionId}>{section.id}</div>
                         </div>
-                      ))}
-                    </div>
-                  )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>
@@ -212,21 +186,21 @@ const Sections = () => {
       {activeTab === Tabs.STATS && (
         <div className={styles.statsContainer}>
           <div className={styles.statCard}>
-            <div className={styles.statIcon}>📖</div>
+            <div className={styles.statIcon}></div>
             <div className={styles.statContent}>
               <h3>Tổng học phần</h3>
               <p className={styles.statNumber}>{stats.total}</p>
             </div>
           </div>
           <div className={styles.statCard}>
-            <div className={styles.statIcon}>⏱️</div>
+            <div className={styles.statIcon}></div>
             <div className={styles.statContent}>
               <h3>Tiết học trung bình</h3>
               <p className={styles.statNumber}>{stats.avgPeriods}</p>
             </div>
           </div>
           <div className={styles.statCard}>
-            <div className={styles.statIcon}>🎯</div>
+            <div className={styles.statIcon}></div>
             <div className={styles.statContent}>
               <h3>Tổng tiết học cần</h3>
               <p className={styles.statNumber}>{stats.totalPeriods}</p>
@@ -235,7 +209,6 @@ const Sections = () => {
         </div>
       )}
 
-      {/* Form Modal */}
       {showFormModal && (
         <div className={styles.modal} onClick={() => setShowFormModal(false)}>
           <div
@@ -248,7 +221,7 @@ const Sections = () => {
                 className={styles.closeBtn}
                 onClick={() => setShowFormModal(false)}
               >
-                ✕
+                ×
               </button>
             </div>
             <form onSubmit={handleSubmit}>
@@ -317,6 +290,65 @@ const Sections = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {selectedSection && (
+        <div className={styles.modal} onClick={() => setSelectedSection(null)}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2>{selectedSection.name}</h2>
+              <button className={styles.closeBtn} onClick={() => setSelectedSection(null)}>
+                ×
+              </button>
+            </div>
+            <div className={styles.modalBody}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <tbody>
+                  <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
+                    <td style={{ padding: "12px", fontWeight: 600, width: "200px", color: "#4a5568" }}>Mã học phần:</td>
+                    <td style={{ padding: "12px" }}>{selectedSection.id}</td>
+                  </tr>
+                  <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
+                    <td style={{ padding: "12px", fontWeight: 600, color: "#4a5568" }}>Tên học phần:</td>
+                    <td style={{ padding: "12px" }}>{selectedSection.name}</td>
+                  </tr>
+                  <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
+                    <td style={{ padding: "12px", fontWeight: 600, color: "#4a5568" }}>Môn học:</td>
+                    <td style={{ padding: "12px" }}>{getCourseName(selectedSection.courseId)}</td>
+                  </tr>
+                  <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
+                    <td style={{ padding: "12px", fontWeight: 600, color: "#4a5568" }}>Số tiết học cần:</td>
+                    <td style={{ padding: "12px" }}>{selectedSection.periodRequired} tiết</td>
+                  </tr>
+                  <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
+                    <td style={{ padding: "12px", fontWeight: 600, color: "#4a5568" }}>Số chỗ ngồi cần:</td>
+                    <td style={{ padding: "12px" }}>{selectedSection.requiredSeats} chỗ</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div className={styles.modalFooter}>
+              <button
+                className={styles.btnEdit}
+                onClick={() => {
+                  handleEdit(selectedSection);
+                  setSelectedSection(null);
+                }}
+              >
+                Sửa
+              </button>
+              <button
+                className={styles.btnDelete}
+                onClick={() => {
+                  handleDelete(selectedSection.id);
+                  setSelectedSection(null);
+                }}
+              >
+                Xóa
+              </button>
+            </div>
           </div>
         </div>
       )}

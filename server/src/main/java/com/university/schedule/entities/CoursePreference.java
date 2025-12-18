@@ -17,8 +17,7 @@ public class CoursePreference {
 
     @Id
     @EqualsAndHashCode.Include
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(columnDefinition = "uuid")
+    @Column(name = "id", length = 100)
     private String id;
 
     @Enumerated(EnumType.STRING)
@@ -37,5 +36,6 @@ public class CoursePreference {
     @JoinColumn(name = "course_id")
     private Course course;
 
+    @Column(name = "preference_value")
     private Integer preferenceValue;
 }

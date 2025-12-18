@@ -33,11 +33,18 @@ public class CoursePreferenceServiceImpl implements CoursePreferenceService {
 
     @Override
     public CoursePreferenceDTO create(CoursePreferenceDTO dto) {
-        if (coursePreferenceRepository.existsById(dto.getId())) {
+        // Check if ID already exists
+        if (dto.getId() != null && coursePreferenceRepository.existsById(dto.getId())) {
             throw new IllegalArgumentException("CoursePreference already exists with id " + dto.getId());
         }
 
+        // Mapper ignores ID, so entity will have null ID
         CoursePreference entity = mapper.toEntity(dto);
+        
+        // Set ID if provided
+        if (dto.getId() != null) {
+            entity.setId(dto.getId());
+        }
 
         Semester semester = SemesterUtils.parseSemester(dto.getSemester());
         

@@ -34,7 +34,7 @@ Table Semester {
 }
 
 Table CoursePreference {
-  id uuid [pk]
+  id varchar [pk]
   semester varchar [ref: > Semester.id]
   teacher_id varchar [ref: > Teacher.id]
   teaching_registration_id varchar [ref: > TeacherRegistration.id]

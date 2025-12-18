@@ -194,6 +194,51 @@
   background: #e53e3e;
 }
 
+.modalFooter {
+  padding: 16px 24px;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.modalFooter button {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.modalFooter .btnEdit {
+  background: #3182ce;
+  color: white;
+}
+
+.modalFooter .btnEdit:hover {
+  background: #2c5282;
+}
+
+.modalFooter .btnDelete {
+  background: #f56565;
+  color: white;
+}
+
+.modalFooter .btnDelete:hover {
+  background: #e53e3e;
+}
+
+.modalFooter .btnCancel {
+  background: #cbd5e0;
+  color: #2d3748;
+}
+
+.modalFooter .btnCancel:hover {
+  background: #a0aec0;
+}
+
 /* Modal */
 .modal {
   position: fixed;
@@ -425,69 +470,145 @@
   line-height: 1;
 }
 
-/* Grouped sections */
-.groupContainer {
-  background: transparent;
-  border-radius: 8px;
-  margin-bottom: 16px;
+/* Course Groups Container */
+.courseGroupsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-top: 20px;
 }
 
-.groupHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 20px;
-  background: linear-gradient(135deg, rgba(49,130,206,0.1) 0%, rgba(56,161,105,0.05) 100%);
+/* Course Box - Bounding box cho mỗi môn học */
+.courseBox {
+  background: white;
+  border: 2px solid #e2e8f0;
   border-radius: 12px;
-  margin-bottom: 16px;
-  border: 2px solid rgba(49,130,206,0.2);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
   transition: all 0.3s ease;
 }
 
-.groupHeader:hover {
-  background: linear-gradient(135deg, rgba(49,130,206,0.15) 0%, rgba(56,161,105,0.08) 100%);
-  border-color: rgba(49,130,206,0.3);
+.courseBox:hover {
+  border-color: #3182ce;
+  box-shadow: 0 4px 16px rgba(49, 130, 206, 0.15);
+}
+
+.courseBoxHeader {
+  background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.courseName {
+  margin: 0;
+  color: white;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+.courseCount {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* Sections List - Danh sách học phần */
+.sectionsList {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sectionItem {
+  background: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.sectionItem:hover {
+  background: #edf2f7;
+  border-color: #3182ce;
   transform: translateX(4px);
 }
 
-.groupTitle {
-  font-weight: 700;
+.sectionItemContent {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.sectionInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.sectionName {
+  margin: 0 0 6px 0;
   color: #1a202c;
-  font-size: 1.1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.sectionMeta {
   display: flex;
   align-items: center;
   gap: 8px;
+  color: #718096;
+  font-size: 0.85rem;
 }
 
-.groupTitle::before {
-  content: "📘";
-  font-size: 1.2rem;
-}
-
-.groupMeta {
+.metaItem {
   color: #4a5568;
-  font-weight: 600;
-  margin-left: 8px;
-  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.metaDivider {
+  color: #cbd5e0;
+}
+
+.sectionId {
+  font-family: 'Courier New', monospace;
   background: white;
-  padding: 4px 10px;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.collapseBtn {
-  background: none;
-  border: none;
-  font-size: 1.1rem;
-  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 6px;
   color: #2d3748;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 1px solid #e2e8f0;
+  flex-shrink: 0;
 }
 
-.groupContent {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 16px;
+.sectionActions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.sectionActions .btnEdit,
+.sectionActions .btnDelete {
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  min-width: 60px;
 }
 
 .codeValue {

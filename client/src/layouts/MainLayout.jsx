@@ -8,7 +8,7 @@ const MainLayout = () => {
     <div className={styles.container}>
       <Sidebar />
       <main className={styles.content}>
-        <Outlet /> {/* Nơi hiển thị nội dung của từng trang */}
+        <Outlet />
       </main>
     </div>
   );

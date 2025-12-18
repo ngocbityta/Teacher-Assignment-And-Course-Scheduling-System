@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 import styles from "./Courses.module.css";
 import { coursesAPI } from "../../api/courses";
 import { getSelectedSemester } from "../../api/index";
@@ -24,7 +25,7 @@ const Courses = () => {
       setCourses(items || []);
     } catch (err) {
       console.error(err);
-      alert("Failed to load courses: " + err.message);
+      toast.error("Không thể tải danh sách môn học: " + err.message);
     } finally {
       setLoading(false);
     }
@@ -68,7 +69,7 @@ const Courses = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.id || !form.name || form.minTeachers === "" || form.maxTeachers === "") {
-      alert("Please fill in all fields");
+      toast.warning("Vui lòng điền đầy đủ thông tin");
       return;
     }
     try {
@@ -79,23 +80,25 @@ const Courses = () => {
         const payload = sem ? { ...form, semester: sem } : form;
         await coursesAPI.create(payload);
       }
+      toast.success(editingId ? "Cập nhật môn học thành công" : "Thêm môn học thành công");
       setShowFormModal(false);
       setForm({ id: "", name: "", minTeachers: "", maxTeachers: "" });
       load();
     } catch (err) {
       console.error(err);
-      alert((editingId ? "Update" : "Create") + " failed: " + err.message);
+      toast.error((editingId ? "Cập nhật" : "Tạo") + " thất bại: " + err.message);
     }
   };
 
   const handleDelete = async (id) => {
-    if (!confirm("Xác nhận xóa môn học này?")) return;
+    if (!window.confirm("Xác nhận xóa môn học này?")) return;
     try {
       await coursesAPI.remove(id);
+      toast.success("Xóa môn học thành công");
       load();
     } catch (err) {
       console.error(err);
-      alert("Delete failed: " + err.message);
+      toast.error("Xóa thất bại: " + err.message);
     }
   };
 
@@ -128,7 +131,7 @@ const Courses = () => {
         <>
           <div className={styles.actionButtons}>
             <button className={styles.btnAdd} onClick={handleOpenForm}>
-              ➕ Thêm môn học
+              Thêm môn học
             </button>
           </div>
 
@@ -139,34 +142,19 @@ const Courses = () => {
           ) : (
             <div className={styles.cardGrid}>
               {courses.map((course) => (
-                <div key={course.id} className={styles.card}>
+                <div 
+                  key={course.id} 
+                  className={styles.card}
+                  onClick={() => handleOpenDetail(course)}
+                  style={{ cursor: "pointer" }}
+                >
                   <div className={styles.cardHeader}>
-                    <h3>{course.name}</h3>
-                  </div>
-                  <div className={styles.cardBody}>
-                    <p>
-                      <strong>Mã:</strong> {course.id}
-                    </p>
-                    <p>
-                      <strong>Giáo viên tối thiểu:</strong> {course.minTeachers}
-                    </p>
-                    <p>
-                      <strong>Giáo viên tối đa:</strong> {course.maxTeachers}
-                    </p>
-                  </div>
-                  <div className={styles.cardFooter}>
-                    <button
-                      className={styles.btnEdit}
-                      onClick={() => handleOpenDetail(course)}
-                    >
-                      Xem chi tiết
-                    </button>
-                    <button
-                      className={styles.btnDelete}
-                      onClick={() => handleDelete(course.id)}
-                    >
-                      Xóa
-                    </button>
+                    <div>
+                      <h3>{course.name}</h3>
+                      <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#718096" }}>
+                        Mã: {course.id}
+                      </p>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -178,21 +166,21 @@ const Courses = () => {
       {activeTab === Tabs.STATS && (
         <div className={styles.statsContainer}>
           <div className={styles.statCard}>
-            <div className={styles.statIcon}>📚</div>
+            <div className={styles.statIcon}></div>
             <div className={styles.statContent}>
               <h3>Tổng môn học</h3>
               <p className={styles.statNumber}>{stats.total}</p>
             </div>
           </div>
           <div className={styles.statCard}>
-            <div className={styles.statIcon}>👥</div>
+            <div className={styles.statIcon}></div>
             <div className={styles.statContent}>
               <h3>Giáo viên tối thiểu (TB)</h3>
               <p className={styles.statNumber}>{stats.minAvg}</p>
             </div>
           </div>
           <div className={styles.statCard}>
-            <div className={styles.statIcon}>👫</div>
+            <div className={styles.statIcon}></div>
             <div className={styles.statContent}>
               <h3>Giáo viên tối đa (TB)</h3>
               <p className={styles.statNumber}>{stats.maxAvg}</p>
@@ -201,7 +189,6 @@ const Courses = () => {
         </div>
       )}
 
-      {/* Detail Modal */}
       {showDetailModal && detailCourse && (
         <div className={styles.modal} onClick={() => setShowDetailModal(false)}>
           <div
@@ -214,7 +201,7 @@ const Courses = () => {
                 className={styles.closeBtn}
                 onClick={() => setShowDetailModal(false)}
               >
-                ✕
+                ×
               </button>
             </div>
             <div className={styles.modalBody}>
@@ -267,23 +254,25 @@ const Courses = () => {
             </div>
             <div className={styles.modalFooter}>
               <button
-                className={styles.btnSubmit}
+                className={styles.btnEdit}
                 onClick={() => handleEdit(detailCourse)}
               >
-                Chỉnh sửa
+                Sửa
               </button>
               <button
-                className={styles.btnCancel}
-                onClick={() => setShowDetailModal(false)}
+                className={styles.btnDelete}
+                onClick={() => {
+                  handleDelete(detailCourse.id);
+                  setShowDetailModal(false);
+                }}
               >
-                Đóng
+                Xóa
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Form Modal */}
       {showFormModal && (
         <div className={styles.modal} onClick={() => setShowFormModal(false)}>
           <div
@@ -296,7 +285,7 @@ const Courses = () => {
                 className={styles.closeBtn}
                 onClick={() => setShowFormModal(false)}
               >
-                ✕
+                ×
               </button>
             </div>
             <form onSubmit={handleSubmit}>

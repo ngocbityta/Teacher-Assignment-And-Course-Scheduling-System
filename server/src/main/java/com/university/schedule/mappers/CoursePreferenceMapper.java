@@ -13,6 +13,7 @@ public interface CoursePreferenceMapper {
     @Mapping(target = "teachingRegistrationId", source = "teachingRegistration.id")
     CoursePreferenceDTO toDto(CoursePreference entity);
 
+    @Mapping(target = "id", ignore = true)
     @Mapping(target = "teacher", ignore = true)
     @Mapping(target = "course", ignore = true)
     @Mapping(target = "teachingRegistration", ignore = true)

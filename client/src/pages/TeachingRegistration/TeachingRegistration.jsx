@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 import styles from "./TeachingRegistration.module.css";
 import { teachingRegistrationAPI } from "../../api/teachingRegistration";
 import { teachersAPI } from "../../api/teachers";
@@ -30,17 +31,15 @@ const TeachingRegistration = () => {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // detail/expand
-  const [expandedId, setExpandedId] = useState(null);
-  const [detail, setDetail] = useState({ timePrefs: [], coursePrefs: [] });
+  const [selectedRegistration, setSelectedRegistration] = useState(null);
+  const [detail, setDetail] = useState({ reg: null, timePrefs: [], coursePrefs: [] });
 
-  // create flow
   const [showCreate, setShowCreate] = useState(false);
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({
     teacherId: "",
     semester: "",
-    maxCourses: 1,
+    maxCourses: "",
   });
   const [timeGrid, setTimeGrid] = useState({});
   const [coursePrefs, setCoursePrefs] = useState({});
@@ -58,7 +57,7 @@ const TeachingRegistration = () => {
       setCourses(coursePage?.items || []);
     } catch (err) {
       console.error(err);
-      alert("Lỗi khi tải dữ liệu: " + err.message);
+      toast.error("Lỗi khi tải dữ liệu: " + err.message);
     } finally {
       setLoading(false);
     }
@@ -71,7 +70,7 @@ const TeachingRegistration = () => {
   const loadAvailableTeachers = async () => {
     const semester = getSelectedSemester();
     if (!semester) {
-      alert("Vui lòng chọn học kỳ trong Cài đặt trước khi tạo đăng ký dạy học.");
+      toast.warning("Vui lòng chọn học kỳ trong Cài đặt trước khi tạo đăng ký dạy học.");
       return;
     }
     try {
@@ -79,27 +78,27 @@ const TeachingRegistration = () => {
       setAvailableTeachers(available || []);
     } catch (err) {
       console.error(err);
-      alert("Lỗi khi tải danh sách giảng viên: " + err.message);
+      toast.error("Lỗi khi tải danh sách giảng viên: " + err.message);
     }
   };
 
-  const openDetail = async (id) => {
-    if (!id) return;
-    setExpandedId(expandedId === id ? null : id);
-    if (expandedId === id) return setDetail({ timePrefs: [], coursePrefs: [] });
+  const openDetail = async (registration) => {
+    if (!registration || !registration.id) return;
+    setSelectedRegistration(registration);
     try {
       const [reg, allTime, allCourse] = await Promise.all([
-        teachingRegistrationAPI.get(id),
+        teachingRegistrationAPI.get(registration.id),
         timePreferenceAPI.list(),
         coursePreferenceAPI.list(),
       ]);
-      const timePrefs = (allTime || []).filter((t) => t.teachingRegistrationId === id);
+      const timePrefs = (allTime || []).filter((t) => t.teachingRegistrationId === registration.id);
       const coursePrefs = (allCourse || []).filter(
-        (c) => c.teachingRegistrationId === id
+        (c) => c.teachingRegistrationId === registration.id
       );
-      setDetail({ reg, timePrefs, coursePrefs });
+      setDetail({ reg: reg || registration, timePrefs, coursePrefs });
     } catch (err) {
       console.error(err);
+      toast.error("Không thể tải chi tiết đăng ký: " + err.message);
     }
   };
 
@@ -108,13 +107,13 @@ const TeachingRegistration = () => {
     const grid = {};
     for (const d of DAYS) {
       grid[d.key] = {};
-      for (const per of p) grid[d.key][per.id] = 0;
+      for (const per of p) grid[d.key][per.id] = "";
     }
     setTimeGrid(grid);
   };
 
   const startCreate = async () => {
-    setForm({ teacherId: "", maxCourses: 1 });
+    setForm({ teacherId: "", maxCourses: "" });
     initGrid();
     setCoursePrefs({});
     setStep(1);
@@ -125,7 +124,7 @@ const TeachingRegistration = () => {
   const updateGridValue = (dayKey, periodId, value) => {
     setTimeGrid((prev) => ({
       ...prev,
-      [dayKey]: { ...prev[dayKey], [periodId]: Number(value || 0) },
+      [dayKey]: { ...prev[dayKey], [periodId]: value === "" ? "" : value },
     }));
   };
 
@@ -142,59 +141,65 @@ const TeachingRegistration = () => {
   };
 
   const setCoursePrefValue = (courseId, v) =>
-    setCoursePrefs((prev) => ({ ...prev, [courseId]: Number(v || 0) }));
+    setCoursePrefs((prev) => ({ ...prev, [courseId]: v === "" ? "" : v }));
 
   const handleApprove = async (id) => {
-    if (!confirm("Bạn có chắc chắn muốn duyệt đăng ký này?")) return;
+    if (!window.confirm("Bạn có chắc chắn muốn duyệt đăng ký này?")) return;
     try {
       await teachingRegistrationAPI.approve(id);
-      alert("Đã duyệt đăng ký thành công");
+      toast.success("Đã duyệt đăng ký thành công");
       loadAll();
     } catch (err) {
       console.error(err);
-      alert("Lỗi khi duyệt đăng ký: " + err.message);
+      toast.error("Lỗi khi duyệt đăng ký: " + err.message);
     }
   };
 
   const handleReject = async (id) => {
-    if (!confirm("Bạn có chắc chắn muốn từ chối đăng ký này?")) return;
+    if (!window.confirm("Bạn có chắc chắn muốn từ chối đăng ký này?")) return;
     try {
       await teachingRegistrationAPI.reject(id);
-      alert("Đã từ chối đăng ký thành công");
+      toast.success("Đã từ chối đăng ký thành công");
       loadAll();
     } catch (err) {
       console.error(err);
-      alert("Lỗi khi từ chối đăng ký: " + err.message);
+      toast.error("Lỗi khi từ chối đăng ký: " + err.message);
     }
   };
 
   const handleDelete = async (id) => {
-    if (!confirm("Bạn có chắc chắn muốn xóa đăng ký này? Hành động này không thể hoàn tác.")) return;
+    if (!window.confirm("Bạn có chắc chắn muốn xóa đăng ký này? Hành động này không thể hoàn tác.")) return;
     try {
       await teachingRegistrationAPI.remove(id);
-      alert("Đã xóa đăng ký thành công");
+      toast.success("Đã xóa đăng ký thành công");
       loadAll();
     } catch (err) {
       console.error(err);
-      alert("Lỗi khi xóa đăng ký: " + err.message);
+      toast.error("Lỗi khi xóa đăng ký: " + err.message);
     }
   };
 
   const handleConfirmCreate = async () => {
-    if (!form.teacherId) return alert("Vui lòng chọn giảng viên");
-    if (Number(form.maxCourses || 0) < 1)
-      return alert("Số học phần tối đa phải >= 1");
+    if (!form.teacherId) {
+      toast.warning("Vui lòng chọn giảng viên");
+      return;
+    }
+    const maxCoursesNum = Number(form.maxCourses || 0);
+    if (maxCoursesNum < 1) {
+      toast.warning("Số học phần tối đa phải >= 1");
+      return;
+    }
     const semester = getSelectedSemester();
-    if (!semester)
-      return alert(
-        "Vui lòng chọn học kỳ trong Cài đặt trước khi tạo đăng ký dạy học."
-      );
+    if (!semester) {
+      toast.warning("Vui lòng chọn học kỳ trong Cài đặt trước khi tạo đăng ký dạy học.");
+      return;
+    }
     const trId = genId("tr");
     const trPayload = {
       id: trId,
       teacherId: form.teacherId,
       semester,
-      maxCourses: Math.max(1, Number(form.maxCourses || 1)),
+      maxCourses: Math.max(1, maxCoursesNum),
       status: "PENDING",
     };
 
@@ -237,12 +242,12 @@ const TeachingRegistration = () => {
         await Promise.all(allCreates);
       }
 
-      alert("Tạo đăng ký dạy học thành công");
+      toast.success("Tạo đăng ký dạy học thành công");
       setShowCreate(false);
       loadAll();
     } catch (err) {
       console.error("Error creating teaching registration:", err);
-      alert("Tạo thất bại: " + err.message);
+      toast.error("Tạo thất bại: " + err.message);
     }
   };
 
@@ -253,7 +258,7 @@ const TeachingRegistration = () => {
       <div className={styles.headerRow}>
         <h2>Đăng ký dạy học</h2>
         <button className={styles.btnAdd} onClick={startCreate}>
-          ➕ Tạo đăng ký
+          Tạo đăng ký
         </button>
       </div>
 
@@ -290,7 +295,8 @@ const TeachingRegistration = () => {
               <div key={r.id} className={styles.card}>
                 <div
                   className={styles.cardHeader}
-                  onClick={() => openDetail(r.id)}
+                  onClick={() => openDetail(r)}
+                  style={{ cursor: "pointer" }}
                 >
                   <div className={styles.teacherInfo}>
                     <div className={styles.avatarContainer}>
@@ -309,89 +315,241 @@ const TeachingRegistration = () => {
                       </div>
                     </div>
                   </div>
-                  <div className={styles.expandHint}>
-                    {expandedId === r.id ? "▲" : "▼"}
-                  </div>
                 </div>
-                {expandedId === r.id && (
-                  <div className={styles.cardBody}>
-                    <h4>Chi tiết</h4>
-                    <div>
-                      <strong>Thời gian ưa thích:</strong>
-                      {detail.timePrefs.length === 0 ? (
-                        <div className={styles.smallNote}>Chưa có</div>
-                      ) : (
-                        <div className={styles.smallNote}>
-                          {detail.timePrefs.slice(0, 8).map((t) => (
-                            <div key={t.id}>
-                              {t.day} - {t.period}: {t.preferenceValue}
-                            </div>
-                          ))}
-                          {detail.timePrefs.length > 8 && (
-                            <div>
-                              ... và {detail.timePrefs.length - 8} mục khác
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                    <div style={{ marginTop: 12 }}>
-                      <strong>Môn học ưa thích:</strong>
-                      {detail.coursePrefs.length === 0 ? (
-                        <div className={styles.smallNote}>Chưa có</div>
-                      ) : (
-                        <ul>
-                          {detail.coursePrefs.map((c) => {
-                            const course =
-                              courses.find((cc) => cc.id === c.courseId) || {};
-                            return (
-                              <li key={c.id}>
-                                {course.name || c.courseId} —{" "}
-                                {c.preferenceValue}
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      )}
-                    </div>
-                    <div className={styles.actionButtons}>
-                      {r.status === "PENDING" && (
-                        <>
-                          <button
-                            className={styles.btnApprove}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleApprove(r.id);
-                            }}
-                          >
-                            ✓ Duyệt
-                          </button>
-                          <button
-                            className={styles.btnReject}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleReject(r.id);
-                            }}
-                          >
-                            ✕ Từ chối
-                          </button>
-                        </>
-                      )}
-                      <button
-                        className={styles.btnDelete}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(r.id);
-                        }}
-                      >
-                        🗑️ Xóa
-                      </button>
-                    </div>
+                {r.status === "PENDING" && (
+                  <div className={styles.cardFooter}>
+                    <button
+                      className={styles.btnApprove}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleApprove(r.id);
+                      }}
+                    >
+                      Duyệt
+                    </button>
+                    <button
+                      className={styles.btnReject}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleReject(r.id);
+                      }}
+                    >
+                      Từ chối
+                    </button>
                   </div>
                 )}
               </div>
             );
           })}
+        </div>
+      )}
+
+      {selectedRegistration && (
+        <div className={styles.modal} onClick={() => setSelectedRegistration(null)}>
+          <div className={styles.modalContent} style={{ maxWidth: "900px", maxHeight: "90vh", overflowY: "auto" }} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2>Chi tiết đăng ký dạy học</h2>
+              <button className={styles.closeBtn} onClick={() => setSelectedRegistration(null)}>
+                ×
+              </button>
+            </div>
+            <div className={styles.modalBody}>
+              {(() => {
+                const teacher = allTeachers.find((t) => t.id === selectedRegistration.teacherId) || {};
+                const reg = detail.reg || selectedRegistration;
+                
+                const timeTable = {};
+                DAYS.forEach(day => {
+                  timeTable[day.key] = {};
+                  PERIODS.forEach(period => {
+                    const pref = detail.timePrefs.find(tp => tp.day === day.key && tp.period === period.id);
+                    timeTable[day.key][period.id] = pref ? pref.preferenceValue : null;
+                  });
+                });
+
+                return (
+                  <>
+                    <div style={{ marginBottom: "24px" }}>
+                      <h3 style={{ marginBottom: "16px", color: "#1a202c" }}>Thông tin cơ bản</h3>
+                      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                        <tbody>
+                          <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
+                            <td style={{ padding: "12px", fontWeight: 600, width: "200px", color: "#4a5568" }}>Giảng viên:</td>
+                            <td style={{ padding: "12px" }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                                {teacher.avatar ? (
+                                  <img src={teacher.avatar} alt={teacher.name} style={{ width: "40px", height: "40px", borderRadius: "50%" }} />
+                                ) : (
+                                  <div style={{ width: "40px", height: "40px", borderRadius: "50%", background: "#e2e8f0", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 600 }}>
+                                    {teacher.name ? teacher.name.charAt(0).toUpperCase() : "?"}
+                                  </div>
+                                )}
+                                <span>{teacher.name || selectedRegistration.teacherId}</span>
+                              </div>
+                            </td>
+                          </tr>
+                          <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
+                            <td style={{ padding: "12px", fontWeight: 600, color: "#4a5568" }}>Số học phần tối đa:</td>
+                            <td style={{ padding: "12px" }}>{reg.maxCourses || selectedRegistration.maxCourses}</td>
+                          </tr>
+                          <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
+                            <td style={{ padding: "12px", fontWeight: 600, color: "#4a5568" }}>Học kỳ:</td>
+                            <td style={{ padding: "12px" }}>{reg.semester || selectedRegistration.semester || "N/A"}</td>
+                          </tr>
+                          <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
+                            <td style={{ padding: "12px", fontWeight: 600, color: "#4a5568" }}>Trạng thái:</td>
+                            <td style={{ padding: "12px" }}>
+                              <span style={{
+                                padding: "4px 12px",
+                                borderRadius: "12px",
+                                fontSize: "0.875rem",
+                                fontWeight: 500,
+                                background: reg.status === "APPROVED" ? "#c6f6d5" : reg.status === "REJECTED" ? "#fed7d7" : "#feebc8",
+                                color: reg.status === "APPROVED" ? "#22543d" : reg.status === "REJECTED" ? "#742a2a" : "#7c2d12"
+                              }}>
+                                {reg.status === "APPROVED" ? "Đã duyệt" : reg.status === "REJECTED" ? "Đã từ chối" : "Đang chờ"}
+                              </span>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div style={{ marginBottom: "24px" }}>
+                      <h3 style={{ marginBottom: "16px", color: "#1a202c" }}>Thời gian ưa thích</h3>
+                      {detail.timePrefs.length === 0 ? (
+                        <p style={{ color: "#718096", textAlign: "center", padding: "20px" }}>Chưa có thời gian ưa thích</p>
+                      ) : (
+                        <div style={{ overflowX: "auto" }}>
+                          <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #e2e8f0" }}>
+                            <thead>
+                              <tr style={{ background: "#f7fafc" }}>
+                                <th style={{ padding: "12px", textAlign: "left", border: "1px solid #e2e8f0", fontWeight: 600 }}>Ca / Thứ</th>
+                                {DAYS.map(day => (
+                                  <th key={day.key} style={{ padding: "12px", textAlign: "center", border: "1px solid #e2e8f0", fontWeight: 600 }}>
+                                    {day.label}
+                                  </th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {PERIODS.map(period => (
+                                <tr key={period.id}>
+                                  <td style={{ padding: "12px", border: "1px solid #e2e8f0", fontWeight: 500, background: "#f7fafc" }}>
+                                    {period.name}
+                                  </td>
+                                  {DAYS.map(day => {
+                                    const value = timeTable[day.key][period.id];
+                                    return (
+                                      <td key={day.key} style={{ padding: "12px", textAlign: "center", border: "1px solid #e2e8f0" }}>
+                                        {value !== null ? (
+                                          <span style={{
+                                            display: "inline-block",
+                                            padding: "4px 8px",
+                                            borderRadius: "4px",
+                                            background: value > 0 ? "#bee3f8" : "#e2e8f0",
+                                            color: value > 0 ? "#2c5282" : "#718096",
+                                            fontWeight: 500,
+                                            minWidth: "30px"
+                                          }}>
+                                            {value}
+                                          </span>
+                                        ) : (
+                                          <span style={{ color: "#cbd5e0" }}>-</span>
+                                        )}
+                                      </td>
+                                    );
+                                  })}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+
+                    <div style={{ marginBottom: "24px" }}>
+                      <h3 style={{ marginBottom: "16px", color: "#1a202c" }}>Môn học ưa thích</h3>
+                      {detail.coursePrefs.length === 0 ? (
+                        <p style={{ color: "#718096", textAlign: "center", padding: "20px" }}>Chưa có môn học ưa thích</p>
+                      ) : (
+                        <div style={{ overflowX: "auto" }}>
+                          <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #e2e8f0" }}>
+                            <thead>
+                              <tr style={{ background: "#f7fafc" }}>
+                                <th style={{ padding: "12px", textAlign: "left", border: "1px solid #e2e8f0", fontWeight: 600 }}>STT</th>
+                                <th style={{ padding: "12px", textAlign: "left", border: "1px solid #e2e8f0", fontWeight: 600 }}>Mã môn học</th>
+                                <th style={{ padding: "12px", textAlign: "left", border: "1px solid #e2e8f0", fontWeight: 600 }}>Tên môn học</th>
+                                <th style={{ padding: "12px", textAlign: "center", border: "1px solid #e2e8f0", fontWeight: 600 }}>Mức ưu tiên</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {detail.coursePrefs.map((c, index) => {
+                                const course = courses.find((cc) => cc.id === c.courseId) || {};
+                                return (
+                                  <tr key={c.id} style={{ borderBottom: "1px solid #e2e8f0" }}>
+                                    <td style={{ padding: "12px", border: "1px solid #e2e8f0" }}>{index + 1}</td>
+                                    <td style={{ padding: "12px", border: "1px solid #e2e8f0", fontFamily: "monospace" }}>{c.courseId}</td>
+                                    <td style={{ padding: "12px", border: "1px solid #e2e8f0" }}>{course.name || "N/A"}</td>
+                                    <td style={{ padding: "12px", textAlign: "center", border: "1px solid #e2e8f0" }}>
+                                      <span style={{
+                                        display: "inline-block",
+                                        padding: "4px 12px",
+                                        borderRadius: "12px",
+                                        background: c.preferenceValue > 0 ? "#bee3f8" : "#e2e8f0",
+                                        color: c.preferenceValue > 0 ? "#2c5282" : "#718096",
+                                        fontWeight: 500,
+                                        minWidth: "40px"
+                                      }}>
+                                        {c.preferenceValue}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+            <div className={styles.modalFooter}>
+              {selectedRegistration.status === "PENDING" && (
+                <>
+                  <button
+                    className={styles.btnApprove}
+                    onClick={() => {
+                      handleApprove(selectedRegistration.id);
+                      setSelectedRegistration(null);
+                    }}
+                  >
+                    Duyệt
+                  </button>
+                  <button
+                    className={styles.btnReject}
+                    onClick={() => {
+                      handleReject(selectedRegistration.id);
+                      setSelectedRegistration(null);
+                    }}
+                  >
+                    Từ chối
+                  </button>
+                </>
+              )}
+              <button
+                className={styles.btnDelete}
+                onClick={() => {
+                  handleDelete(selectedRegistration.id);
+                  setSelectedRegistration(null);
+                }}
+              >
+                Xóa
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -407,12 +565,12 @@ const TeachingRegistration = () => {
                 className={styles.closeBtn}
                 onClick={() => setShowCreate(false)}
               >
-                ✕
+                ×
               </button>
             </div>
 
             <div className={styles.modalBody}>
-              {step === 1 && (
+                  {step === 1 && (
                 <div className={styles.stepContent}>
                   <h3 className={styles.stepTitle}>Chọn giảng viên</h3>
                   <div className={styles.formGroup}>
@@ -467,6 +625,13 @@ const TeachingRegistration = () => {
                       onChange={(e) =>
                         setForm({ ...form, maxCourses: e.target.value })
                       }
+                      placeholder="Nhập số học phần"
+                      onBlur={(e) => {
+                        const val = e.target.value;
+                        if (val === "" || val === "0") {
+                          setForm({ ...form, maxCourses: "" });
+                        }
+                      }}
                     />
                   </div>
                 </div>
@@ -497,12 +662,20 @@ const TeachingRegistration = () => {
                                 type="number"
                                 min="0"
                                 value={
-                                  (timeGrid[d.key] && timeGrid[d.key][p.id]) ||
-                                  0
+                                  (timeGrid[d.key] && timeGrid[d.key][p.id]) !== undefined
+                                    ? timeGrid[d.key][p.id]
+                                    : ""
                                 }
                                 onChange={(e) =>
                                   updateGridValue(d.key, p.id, e.target.value)
                                 }
+                                placeholder="0"
+                                onBlur={(e) => {
+                                  const val = e.target.value;
+                                  if (val === "" || val === "0") {
+                                    updateGridValue(d.key, p.id, "");
+                                  }
+                                }}
                               />
                             </div>
                           ))}
@@ -534,11 +707,18 @@ const TeachingRegistration = () => {
                           <input
                             type="number"
                             min="0"
-                            value={coursePrefs[c.id]}
+                            value={coursePrefs[c.id] !== undefined ? coursePrefs[c.id] : ""}
                             onChange={(e) =>
                               setCoursePrefValue(c.id, e.target.value)
                             }
                             className={styles.priorityInput}
+                            placeholder="0"
+                            onBlur={(e) => {
+                              const val = e.target.value;
+                              if (val === "" || val === "0") {
+                                setCoursePrefValue(c.id, "");
+                              }
+                            }}
                           />
                         )}
                       </div>
@@ -563,7 +743,7 @@ const TeachingRegistration = () => {
                         Số học phần tối đa:
                       </span>
                       <span className={styles.previewValue}>
-                        {form.maxCourses}
+                        {form.maxCourses || "Chưa nhập"}
                       </span>
                     </div>
                   </div>
@@ -626,8 +806,10 @@ const TeachingRegistration = () => {
                 <button
                   className={styles.btnSubmit}
                   onClick={() => {
-                    if (step === 1 && !form.teacherId)
-                      return alert("Vui lòng chọn giảng viên");
+                    if (step === 1 && !form.teacherId) {
+                      toast.warning("Vui lòng chọn giảng viên");
+                      return;
+                    }
                     setStep(step + 1);
                     if (step === 1) initGrid();
                   }}
@@ -640,7 +822,7 @@ const TeachingRegistration = () => {
                   className={styles.btnSubmit}
                   onClick={handleConfirmCreate}
                 >
-                  ✓ Xác nhận & Tạo
+                  Xác nhận & Tạo
                 </button>
               )}
             </div>

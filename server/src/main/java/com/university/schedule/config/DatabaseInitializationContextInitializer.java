@@ -30,8 +30,6 @@ public class DatabaseInitializationContextInitializer implements ApplicationCont
             String dbName = extractDatabaseName(datasourceUrl);
             String baseUrl = extractBaseUrl(datasourceUrl);
 
-            log.info("Checking if database '{}' exists...", dbName);
-
             try (Connection conn = DriverManager.getConnection(baseUrl, datasourceUsername, datasourcePassword);
                  Statement stmt = conn.createStatement()) {
 
@@ -40,11 +38,7 @@ public class DatabaseInitializationContextInitializer implements ApplicationCont
                 );
 
                 if (!rs.next()) {
-                    log.info("Database '{}' does not exist. Creating database...", dbName);
                     stmt.executeUpdate("CREATE DATABASE " + dbName);
-                    log.info("Database '{}' created successfully.", dbName);
-                } else {
-                    log.info("Database '{}' already exists.", dbName);
                 }
             }
         } catch (Exception e) {
