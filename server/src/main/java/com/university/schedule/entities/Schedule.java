@@ -1,18 +1,16 @@
 package com.university.schedule.entities;
 
-import com.university.schedule.enums.Period;
-import com.university.schedule.enums.Semester;
-import jakarta.persistence.*;
 
-import java.time.DayOfWeek;
+import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import lombok.*;
 
 @Entity
 @Table(name = "schedules",
         uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"section_id", "day", "period"}),
-                @UniqueConstraint(columnNames = {"room_id", "day", "period"})
+                @UniqueConstraint(columnNames = {"name", "semester"})
         })
 @Getter
 @Setter
@@ -27,28 +25,29 @@ public class Schedule {
     @Column(name = "id", length = 100)
     private String id;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "semester", nullable = false)
-    private Semester semester;
+    private String semester;
 
-    @ManyToOne
-    @JoinColumn(name = "teacher_id", nullable = false)
-    private Teacher teacher;
+    @Column(name = "name", length = 255, nullable = false)
+    private String name;
 
-    @ManyToOne
-    @JoinColumn(name = "section_id", nullable = false)
-    private Section section;
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "assignments", columnDefinition = "jsonb")
+    private String assignments; // JSON array of assignments
 
-    @ManyToOne
-    @JoinColumn(name = "room_id", nullable = false)
-    private Classroom classroom;
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "statistics", columnDefinition = "jsonb")
+    private String statistics; // JSON object with statistics
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "day", nullable = false)
-    private DayOfWeek day;
+    @Column(name = "objective_value")
+    private Integer objectiveValue;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "period", nullable = false)
-    private Period period;
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "penalties", columnDefinition = "jsonb")
+    private String penalties; // JSON object with penalty details
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "scores", columnDefinition = "jsonb")
+    private String scores; // JSON object with score details
 
 }

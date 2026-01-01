@@ -5,14 +5,12 @@ import com.university.schedule.entities.Course;
 import com.university.schedule.entities.CoursePreference;
 import com.university.schedule.entities.Teacher;
 import com.university.schedule.entities.TeachingRegistration;
-import com.university.schedule.enums.Semester;
-import com.university.schedule.exceptions.NotFoundException;
 import com.university.schedule.mappers.CoursePreferenceMapper;
 import com.university.schedule.repositories.CoursePreferenceRepository;
 import com.university.schedule.repositories.CourseRepository;
 import com.university.schedule.repositories.TeacherRepository;
 import com.university.schedule.repositories.TeachingRegistrationRepository;
-import com.university.schedule.utils.SemesterUtils;
+import com.university.schedule.exceptions.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,7 +44,7 @@ public class CoursePreferenceServiceImpl implements CoursePreferenceService {
             entity.setId(dto.getId());
         }
 
-        Semester semester = SemesterUtils.parseSemester(dto.getSemester());
+        String semester = dto.getSemester();
         
         Teacher teacher = teacherRepository.findById(dto.getTeacherId())
                 .orElseThrow(() -> new NotFoundException("Teacher not found with id " + dto.getTeacherId()));
@@ -86,7 +84,7 @@ public class CoursePreferenceServiceImpl implements CoursePreferenceService {
         CoursePreference entity = coursePreferenceRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("CoursePreference not found with id " + id));
 
-        Semester semester = SemesterUtils.parseSemester(dto.getSemester());
+        String semester = dto.getSemester();
         
         Teacher teacher = teacherRepository.findById(dto.getTeacherId())
                 .orElseThrow(() -> new NotFoundException("Teacher not found with id " + dto.getTeacherId()));

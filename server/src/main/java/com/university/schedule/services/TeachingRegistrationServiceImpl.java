@@ -6,7 +6,6 @@ import com.university.schedule.enums.RegistrationStatus;
 import com.university.schedule.exceptions.NotFoundException;
 import com.university.schedule.mappers.TeachingRegistrationMapper;
 import com.university.schedule.repositories.*;
-import com.university.schedule.utils.SemesterUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,7 +26,7 @@ public class TeachingRegistrationServiceImpl implements TeachingRegistrationServ
         TeachingRegistration entity = mapper.toEntity(dto);
         entity.setTeacher(teacherRepository.findById(dto.getTeacherId())
                 .orElseThrow(() -> new NotFoundException("Teacher not found with id " + dto.getTeacherId())));
-        entity.setSemester(SemesterUtils.parseSemester(dto.getSemester()));
+        entity.setSemester(dto.getSemester());
         return mapper.toDto(teachingRegistrationRepository.save(entity));
     }
 
@@ -40,7 +39,7 @@ public class TeachingRegistrationServiceImpl implements TeachingRegistrationServ
         existing.setStatus(dto.getStatus());
         existing.setTeacher(teacherRepository.findById(dto.getTeacherId())
                 .orElseThrow(() -> new NotFoundException("Teacher not found with id " + dto.getTeacherId())));
-        existing.setSemester(SemesterUtils.parseSemester(dto.getSemester()));
+        existing.setSemester(dto.getSemester());
 
         return mapper.toDto(teachingRegistrationRepository.save(existing));
     }

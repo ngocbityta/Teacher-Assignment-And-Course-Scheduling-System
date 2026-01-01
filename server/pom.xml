@@ -1,12 +1,11 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<?xml version='1.0' encoding='UTF-8'?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>3.5.6</version>
-        <relativePath/> <!-- lookup parent from repository -->
+        <relativePath /> 
     </parent>
     <groupId>com.university</groupId>
     <artifactId>schedule-system</artifactId>
@@ -15,7 +14,7 @@
     <description>Teacher Assignment and Course Scheduling System</description>
     <properties>
         <java.version>25</java.version>
-        <!-- Flyway Maven plugin properties (optional, for manual execution only) -->
+        
         <flyway.url>jdbc:postgresql://localhost:5432/university_schedule</flyway.url>
         <flyway.user>postgres</flyway.user>
         <flyway.password>your_password</flyway.password>
@@ -95,7 +94,7 @@
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-database-postgresql</artifactId>
         </dependency>
-    </dependencies>
+    <dependency><groupId>com.fasterxml.jackson.datatype</groupId><artifactId>jackson-datatype-jsr310</artifactId></dependency></dependencies>
 
     <build>
         <plugins>
@@ -138,8 +137,8 @@
                 <groupId>org.flywaydb</groupId>
                 <artifactId>flyway-maven-plugin</artifactId>
                 <configuration>
-                    <!-- Configuration can be overridden via command line or properties -->
-                    <!-- Example: mvn flyway:validate -Dflyway.url=jdbc:postgresql://localhost:5432/university_schedule -->
+                    
+                    
                     <url>${flyway.url}</url>
                     <user>${flyway.user}</user>
                     <password>${flyway.password}</password>
@@ -152,9 +151,9 @@
                     <outOfOrder>false</outOfOrder>
                 </configuration>
                 <executions>
-                    <!-- Validate migrations on compile -->
-                    <!-- Note: This requires flyway.url, flyway.user, flyway.password to be set -->
-                    <!-- For normal usage, Spring Boot will handle Flyway migrations automatically -->
+                    
+                    
+                    
                     <execution>
                         <id>validate-migrations</id>
                         <phase>none</phase>

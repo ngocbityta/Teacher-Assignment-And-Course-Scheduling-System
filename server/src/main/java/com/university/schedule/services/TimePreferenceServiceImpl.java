@@ -1,16 +1,16 @@
 package com.university.schedule.services;
 
 import com.university.schedule.dtos.TimePreferenceDTO;
+import com.university.schedule.entities.Period;
 import com.university.schedule.entities.Teacher;
 import com.university.schedule.entities.TimePreference;
 import com.university.schedule.entities.TeachingRegistration;
-import com.university.schedule.enums.Semester;
-import com.university.schedule.exceptions.NotFoundException;
 import com.university.schedule.mappers.TimePreferenceMapper;
+import com.university.schedule.repositories.PeriodRepository;
 import com.university.schedule.repositories.TeacherRepository;
 import com.university.schedule.repositories.TeachingRegistrationRepository;
 import com.university.schedule.repositories.TimePreferenceRepository;
-import com.university.schedule.utils.SemesterUtils;
+import com.university.schedule.exceptions.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +27,7 @@ public class TimePreferenceServiceImpl implements TimePreferenceService {
     private final TimePreferenceMapper mapper;
     private final TeacherRepository teacherRepository;
     private final TeachingRegistrationRepository teachingRegistrationRepository;
+    private final PeriodRepository periodRepository;
 
     @Override
     public TimePreferenceDTO create(TimePreferenceDTO dto) {
@@ -40,12 +41,17 @@ public class TimePreferenceServiceImpl implements TimePreferenceService {
                 .orElseThrow(() -> new NotFoundException("Teacher not found with id " + dto.getTeacherId()));
         TeachingRegistration teachingRegistration = teachingRegistrationRepository.findById(dto.getTeachingRegistrationId())
                 .orElseThrow(() -> new NotFoundException("TeachingRegistration not found with id " + dto.getTeachingRegistrationId()));
+        Period period = periodRepository.findById(dto.getPeriodId())
+                .orElseThrow(() -> new NotFoundException("Period not found with id " + dto.getPeriodId()));
         
-        Semester semester = SemesterUtils.parseSemester(dto.getSemester());
+        String semester = dto.getSemester();
 
         entity.setTeacher(teacher);
         entity.setSemester(semester);
         entity.setTeachingRegistration(teachingRegistration);
+        entity.setPeriod(period);
+        entity.setDay(dto.getDay());
+        entity.setPreferenceValue(dto.getPreferenceValue());
 
         return mapper.toDto(repository.save(entity));
     }
@@ -73,13 +79,15 @@ public class TimePreferenceServiceImpl implements TimePreferenceService {
                 .orElseThrow(() -> new NotFoundException("Teacher not found with id " + dto.getTeacherId()));
         TeachingRegistration teachingRegistration = teachingRegistrationRepository.findById(dto.getTeachingRegistrationId())
                 .orElseThrow(() -> new NotFoundException("TeachingRegistration not found with id " + dto.getTeachingRegistrationId()));
+        Period period = periodRepository.findById(dto.getPeriodId())
+                .orElseThrow(() -> new NotFoundException("Period not found with id " + dto.getPeriodId()));
         
-        Semester semester = SemesterUtils.parseSemester(dto.getSemester());
+        String semester = dto.getSemester();
 
         entity.setTeacher(teacher);
         entity.setSemester(semester);
         entity.setTeachingRegistration(teachingRegistration);
-        entity.setPeriod(dto.getPeriod());
+        entity.setPeriod(period);
         entity.setDay(dto.getDay());
         entity.setPreferenceValue(dto.getPreferenceValue());
 

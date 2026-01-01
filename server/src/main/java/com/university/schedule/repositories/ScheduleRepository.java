@@ -1,7 +1,7 @@
 package com.university.schedule.repositories;
 
 import com.university.schedule.entities.Schedule;
-import com.university.schedule.enums.Semester;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -11,17 +11,24 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 public interface ScheduleRepository extends JpaRepository<Schedule, String> {
-    List<Schedule> findBySemester(Semester semester);
+    List<Schedule> findBySemester(String semester);
     
     @Modifying
     @Transactional
     @Query("DELETE FROM Schedule s WHERE s.semester = :semester")
-    void deleteBySemester(@Param("semester") Semester semester);
+    void deleteBySemester(@Param("semester") String semester);
+    
+    // This method is no longer needed as we store assignments as JSON
+    // Keeping for backward compatibility but not used
+
+    // Schedule versioning methods
+    List<Schedule> findBySemesterAndName(String semester, String name);
+    
+    @Query("SELECT DISTINCT s.name FROM Schedule s WHERE s.semester = :semester AND s.name IS NOT NULL ORDER BY s.name")
+    List<String> findDistinctNamesBySemester(@Param("semester") String semester);
     
     @Modifying
     @Transactional
-    @Query("DELETE FROM Schedule s WHERE s.classroom.id = :classroomId AND s.day = :day AND s.period = :period")
-    void deleteByClassroomAndDayAndPeriod(@Param("classroomId") String classroomId, 
-                                          @Param("day") java.time.DayOfWeek day, 
-                                          @Param("period") com.university.schedule.enums.Period period);
+    @Query("DELETE FROM Schedule s WHERE s.semester = :semester AND s.name = :name")
+    void deleteBySemesterAndName(@Param("semester") String semester, @Param("name") String name);
 }

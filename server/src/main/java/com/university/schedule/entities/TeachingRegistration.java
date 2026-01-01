@@ -1,7 +1,7 @@
 package com.university.schedule.entities;
 
 import com.university.schedule.enums.RegistrationStatus;
-import com.university.schedule.enums.Semester;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -25,9 +25,8 @@ public class TeachingRegistration {
     @JoinColumn(name = "teacher_id", nullable = false)
     private Teacher teacher;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "semester", nullable = false)
-    private Semester semester;
+    private String semester;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)

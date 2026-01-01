@@ -1,12 +1,9 @@
 package com.university.schedule.dtos;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.*;
-import java.time.DayOfWeek;
-
-
-import com.university.schedule.enums.Period;
+import java.util.List;
+import java.util.Map;
 
 @Getter
 @Setter
@@ -20,23 +17,17 @@ public class ScheduleDTO {
     @NotBlank(message = "Semester is required")
     private String semester;
 
-    @NotBlank(message = "Teacher ID is required")
-    private String teacherId;
+    @NotBlank(message = "Name is required")
+    private String name;
 
-    @NotBlank(message = "Section ID is required")
-    private String sectionId;
-
-    @NotBlank(message = "Classroom ID is required")
-    private String classroomId;
-
-    @NotNull(message = "Day is required")
-    private DayOfWeek day;
-
-    @NotNull(message = "Period is required")
-    private Period period;
-
-    // Additional fields for display
-    private String teacherName;
-    private String sectionName;
-    private String classroomName;
+    // JSON fields
+    private List<AssignmentDTO> assignments;
+    
+    private StatisticsDTO statistics;
+    
+    private Integer objectiveValue;
+    
+    private Map<String, Object> penalties; // Flexible structure for penalties
+    
+    private Map<String, Object> scores; // Flexible structure for scores
 }

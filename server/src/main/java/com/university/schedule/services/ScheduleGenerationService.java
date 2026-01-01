@@ -1,25 +1,24 @@
 package com.university.schedule.services;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.university.schedule.dtos.AssignmentDTO;
 import com.university.schedule.dtos.ScheduleDTO;
 import com.university.schedule.dtos.ScheduleGenerationResponseDTO;
+import com.university.schedule.dtos.StatisticsDTO;
 import com.university.schedule.entities.*;
-import com.university.schedule.enums.Period;
 import com.university.schedule.enums.RegistrationStatus;
-import com.university.schedule.enums.Semester;
-import com.university.schedule.mappers.ScheduleMapper;
+import com.university.schedule.enums.RegistrationStatus;
+import com.university.schedule.mappers.ScheduleJsonMapper;
 import com.university.schedule.repositories.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import jakarta.persistence.EntityManager;
 
 import java.time.DayOfWeek;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 @Slf4j
 @Service
@@ -39,30 +38,22 @@ public class ScheduleGenerationService {
     private final TeachingRegistrationRepository teachingRegistrationRepository;
     private final TeacherRepository teacherRepository;
     private final CourseRepository courseRepository;
-    private final SectionRepository sectionRepository;
     private final ClassroomRepository classroomRepository;
     private final CoursePreferenceRepository coursePreferenceRepository;
     private final TimePreferenceRepository timePreferenceRepository;
     private final ScheduleRepository scheduleRepository;
-    private final EntityManager entityManager;
-    private final ScheduleMapper scheduleMapper;
+    private final ScheduleJsonMapper scheduleJsonMapper;
+    private final PeriodRepository periodRepository;
+    private final SectionRepository sectionRepository;
 
     @Transactional
-    public List<Schedule> generateSchedule(Semester semester) {
-        List<TeachingRegistration> registrations = teachingRegistrationRepository
-                .findByStatusAndSemester(RegistrationStatus.APPROVED, semester);
-
-        if (registrations.isEmpty()) {
-            throw new RuntimeException("No approved teaching registrations found for semester: " + semester);
-        }
-
-        Map<String, Object> requestData = buildRequestData(registrations, semester);
-        JsonNode response = researchService.callSchedulingService(requestData);
-        return parseAndSaveSchedules(response, semester);
+    public List<Schedule> generateSchedule(String semester) {
+        // This method is deprecated - use generateScheduleWithValue instead
+        throw new UnsupportedOperationException("This method is deprecated. Use generateScheduleWithValue instead.");
     }
 
     @Transactional
-    public ScheduleGenerationResponseDTO generateScheduleWithValue(Semester semester) {
+    public ScheduleGenerationResponseDTO generateScheduleWithValue(String semester, String algorithm, String scheduleName) {
         // Validate before generating
         List<String> validationErrors = validateScheduleGeneration(semester);
         if (!validationErrors.isEmpty()) {
@@ -73,12 +64,42 @@ public class ScheduleGenerationService {
         List<TeachingRegistration> registrations = teachingRegistrationRepository
                 .findByStatusAndSemester(RegistrationStatus.APPROVED, semester);
 
+        // Check limits for exact scheduling
+        if ("exact".equalsIgnoreCase(algorithm)) {
+            // Count teachers
+            long distinctTeachers = registrations.stream()
+                .map(tr -> tr.getTeacher().getId())
+                .distinct()
+                .count();
+            
+            // Count sections for courses in these registrations
+            Set<String> registrationIds = registrations.stream()
+                .map(TeachingRegistration::getId)
+                .collect(Collectors.toSet());
+
+            Set<String> courseIds = coursePreferenceRepository.findAll().stream()
+                .filter(cp -> cp.getTeachingRegistration() != null && registrationIds.contains(cp.getTeachingRegistration().getId()))
+                .filter(cp -> cp.getCourse() != null)
+                .map(cp -> cp.getCourse().getId())
+                .distinct()
+                .collect(Collectors.toSet());
+
+            long totalSections = sectionRepository.findAll().stream()
+                .filter(s -> s.getCourse() != null && courseIds.contains(s.getCourse().getId()))
+                .count();
+
+            if (distinctTeachers > 15 || totalSections > 30) {
+                 throw new RuntimeException("dataset too large for exact scheduling. Limit: 15 Teachers, 30 Sections. Current: " + distinctTeachers + " Teachers, " + totalSections + " Sections.");
+            }
+        }
+
         Map<String, Object> requestData = buildRequestData(registrations, semester);
+        requestData.put("algorithm", algorithm);
         JsonNode response = researchService.callSchedulingService(requestData);
-        return parseAndSaveSchedulesWithValue(response, semester);
+        return parseAndSaveSchedulesWithValue(response, semester, scheduleName);
     }
 
-    private List<String> validateScheduleGeneration(Semester semester) {
+    private List<String> validateScheduleGeneration(String semester) {
         List<String> errors = new ArrayList<>();
 
         // Check approved teaching registrations
@@ -190,7 +211,7 @@ public class ScheduleGenerationService {
         return errors;
     }
 
-    private Map<String, Object> buildRequestData(List<TeachingRegistration> registrations, Semester semester) {
+    private Map<String, Object> buildRequestData(List<TeachingRegistration> registrations, String semester) {
         Map<String, Object> requestData = new HashMap<>();
         requestData.put("teachers", buildTeachersData(registrations));
         requestData.put("courses", buildCoursesData(registrations));
@@ -307,7 +328,7 @@ public class ScheduleGenerationService {
                 .collect(Collectors.toList());
     }
 
-    private Map<String, Object> buildClassroomsData(Semester semester) {
+    private Map<String, Object> buildClassroomsData(String semester) {
         List<Classroom> classrooms = classroomRepository.findBySemester(semester, Pageable.unpaged())
                 .getContent();
 
@@ -326,32 +347,13 @@ public class ScheduleGenerationService {
     }
 
     private List<String> generatePeriodsArray() {
-        return IntStream.range(0, Period.values().length)
-                .mapToObj(i -> String.valueOf(i + 1))
+        return periodRepository.findAllByOrderByOrderIndexAsc().stream()
+                .map(p -> String.valueOf(p.getOrderIndex()))
                 .collect(Collectors.toList());
     }
 
-    private List<Schedule> parseAndSaveSchedules(JsonNode response, Semester semester) {
-        validateResponse(response);
 
-        JsonNode assignments = response.get("solution").get("assignments");
-        List<Schedule> schedules = new ArrayList<>();
-
-        for (JsonNode assignment : assignments) {
-            if (!hasRequiredFields(assignment)) {
-                log.warn("Skipping assignment with missing fields: {}", assignment.toString());
-                continue;
-            }
-
-            Schedule schedule = buildScheduleFromAssignment(assignment, semester);
-            schedules.add(schedule);
-        }
-
-        deleteExistingSchedules(semester);
-        return scheduleRepository.saveAll(schedules);
-    }
-
-    private ScheduleGenerationResponseDTO parseAndSaveSchedulesWithValue(JsonNode response, Semester semester) {
+    private ScheduleGenerationResponseDTO parseAndSaveSchedulesWithValue(JsonNode response, String semester, String scheduleName) {
         validateResponse(response);
 
         JsonNode solution = response.get("solution");
@@ -360,48 +362,89 @@ public class ScheduleGenerationService {
             objectiveValue = solution.get("objective_value").asInt();
         }
 
-        JsonNode assignments = solution.get("assignments");
-        List<Schedule> schedules = new ArrayList<>();
+        JsonNode assignmentsNode = solution.get("assignments");
 
-        // First, delete existing schedules for this semester
-        deleteExistingSchedules(semester);
+        // Delete existing schedule with the same name
+        if (scheduleName != null && !scheduleName.isEmpty()) {
+            scheduleRepository.deleteBySemesterAndName(semester, scheduleName);
+        } else {
+            throw new IllegalArgumentException("Schedule name is required for generation. Cannot proceed to avoid accidental data loss.");
+        }
 
-        // Build schedules and delete any conflicting schedules (from other semesters)
-        Set<String> processedKeys = new HashSet<>();
-        for (JsonNode assignment : assignments) {
-            if (!hasRequiredFields(assignment)) {
-                log.warn("Skipping assignment with missing fields: {}", assignment.toString());
+        // Convert assignments to DTOs
+        List<AssignmentDTO> assignments = new ArrayList<>();
+        Set<String> teacherIds = new HashSet<>();
+        Set<String> classroomIds = new HashSet<>();
+        Set<String> courseIds = new HashSet<>();
+        Set<String> sectionIds = new HashSet<>();
+        
+        for (JsonNode assignmentNode : assignmentsNode) {
+            if (!hasRequiredFields(assignmentNode)) {
+                log.warn("Skipping assignment with missing fields: {}", assignmentNode.toString());
                 continue;
             }
 
-            String classroomId = assignment.get("classroom_id").asText();
-            DayOfWeek day = parseDayOfWeek(assignment.get("day").asText());
-            Period period = parsePeriod(assignment.get("period").asText());
+            AssignmentDTO assignment = AssignmentDTO.builder()
+                    .teacherId(assignmentNode.get("teacher_id").asText())
+                    .sectionId(assignmentNode.get("section_id").asText())
+                    .classroomId(assignmentNode.get("classroom_id").asText())
+                    .day(assignmentNode.get("day").asText())
+                    .period(assignmentNode.get("period").asText())
+                    .build();
             
-            // Create a unique key to avoid deleting the same conflict multiple times
-            String conflictKey = classroomId + "_" + day + "_" + period;
-            if (!processedKeys.contains(conflictKey)) {
-                // Delete any conflicting schedules (from any semester) for this room/day/period
-                scheduleRepository.deleteByClassroomAndDayAndPeriod(classroomId, day, period);
-                processedKeys.add(conflictKey);
+            // Extract course_id if available
+            if (assignmentNode.has("course_id")) {
+                assignment.setCourseId(assignmentNode.get("course_id").asText());
+            } else {
+                // Try to get course_id from section
+                try {
+                    Section section = sectionRepository.findById(assignment.getSectionId()).orElse(null);
+                    if (section != null && section.getCourse() != null) {
+                        assignment.setCourseId(section.getCourse().getId());
+                    }
+                } catch (Exception e) {
+                    log.warn("Could not get course_id for section {}", assignment.getSectionId());
+                }
             }
             
-            Schedule schedule = buildScheduleFromAssignment(assignment, semester);
-            schedules.add(schedule);
+            assignments.add(assignment);
+            teacherIds.add(assignment.getTeacherId());
+            classroomIds.add(assignment.getClassroomId());
+            if (assignment.getCourseId() != null) {
+                courseIds.add(assignment.getCourseId());
+            }
+            sectionIds.add(assignment.getSectionId());
         }
+
+        // Build statistics
+        StatisticsDTO statistics = StatisticsDTO.builder()
+                .numAssignments(assignments.size())
+                .numClassrooms(classroomIds.size())
+                .numCourses(courseIds.size())
+                .numSections(sectionIds.size())
+                .numTeachers(teacherIds.size())
+                .build();
+
+        // Create single Schedule record with JSON
+        String scheduleId = scheduleName + "_" + semester;
+        ScheduleDTO scheduleDTO = ScheduleDTO.builder()
+                .id(scheduleId)
+                .semester(semester)
+                .name(scheduleName)
+                .assignments(assignments)
+                .statistics(statistics)
+                .objectiveValue(objectiveValue)
+                .build();
+
+        Schedule schedule = scheduleJsonMapper.toEntity(scheduleDTO);
+        schedule.setSemester(semester);
         
-        // Flush to ensure all deletes are committed before insert
-        entityManager.flush();
-        entityManager.clear();
+        Schedule savedSchedule = scheduleRepository.save(schedule);
 
-        List<Schedule> savedSchedules = scheduleRepository.saveAll(schedules);
-
-        List<ScheduleDTO> scheduleDTOs = savedSchedules.stream()
-                .map(scheduleMapper::toDto)
-                .collect(Collectors.toList());
+        ScheduleDTO savedDTO = scheduleJsonMapper.toDto(savedSchedule);
 
         return ScheduleGenerationResponseDTO.builder()
-                .schedules(scheduleDTOs)
+                .schedules(List.of(savedDTO))
                 .objectiveValue(objectiveValue)
                 .build();
     }
@@ -422,39 +465,6 @@ public class ScheduleGenerationService {
                 assignment.has("day") && assignment.has("period") && assignment.has("classroom_id");
     }
 
-    private Schedule buildScheduleFromAssignment(JsonNode assignment, Semester semester) {
-        String teacherId = assignment.get("teacher_id").asText();
-        String sectionId = assignment.get("section_id").asText();
-        String classroomId = assignment.get("classroom_id").asText();
-        DayOfWeek day = parseDayOfWeek(assignment.get("day").asText());
-        Period period = parsePeriod(assignment.get("period").asText());
-
-        Teacher teacher = teacherRepository.findById(teacherId)
-                .orElseThrow(() -> new RuntimeException("Teacher not found: " + teacherId));
-        Section section = sectionRepository.findById(sectionId)
-                .orElseThrow(() -> new RuntimeException("Section not found: " + sectionId));
-        Classroom classroom = classroomRepository.findById(classroomId)
-                .orElseThrow(() -> new RuntimeException("Classroom not found: " + classroomId));
-
-        String scheduleId = String.format("%s_%s_%s_%s_%s", teacherId, sectionId, day, period, classroomId);
-
-        return Schedule.builder()
-                .id(scheduleId)
-                .semester(semester)
-                .teacher(teacher)
-                .section(section)
-                .classroom(classroom)
-                .day(day)
-                .period(period)
-                .build();
-    }
-
-    private void deleteExistingSchedules(Semester semester) {
-        scheduleRepository.deleteBySemester(semester);
-        // Flush to ensure delete is committed before insert
-        entityManager.flush();
-        entityManager.clear();
-    }
 
     private String mapDayOfWeek(DayOfWeek day) {
         switch (day) {
@@ -469,30 +479,8 @@ public class ScheduleGenerationService {
         }
     }
 
-    private DayOfWeek parseDayOfWeek(String dayStr) {
-        switch (dayStr.toLowerCase()) {
-            case "mon": return DayOfWeek.MONDAY;
-            case "tue": return DayOfWeek.TUESDAY;
-            case "wed": return DayOfWeek.WEDNESDAY;
-            case "thu": return DayOfWeek.THURSDAY;
-            case "fri": return DayOfWeek.FRIDAY;
-            case "sat": return DayOfWeek.SATURDAY;
-            case "sun": return DayOfWeek.SUNDAY;
-            default: return DayOfWeek.valueOf(dayStr.toUpperCase());
-        }
-    }
-
     private String mapPeriod(Period period) {
-        return String.valueOf(period.ordinal() + 1);
-    }
-
-    private Period parsePeriod(String periodStr) {
-        int periodNum = Integer.parseInt(periodStr);
-        if (periodNum < 1 || periodNum > Period.values().length) {
-            throw new RuntimeException("Invalid period number: " + periodStr +
-                    ". Expected range: 1-" + Period.values().length);
-        }
-        return Period.values()[periodNum - 1];
+        return String.valueOf(period.getOrderIndex());
     }
 
     private <T> T orDefault(T value, T defaultValue) {

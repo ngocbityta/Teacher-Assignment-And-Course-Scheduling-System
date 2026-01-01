@@ -15,5 +15,12 @@ public class ErrorResponse {
     private String error;
     private String message;
     private Map<String, String> errors; // For validation errors
+    
+    // Explicit constructor for common use case (error, message, null)
+    public ErrorResponse(String error, String message) {
+        this.error = error;
+        this.message = message;
+        this.errors = null;
+    }
 }
 

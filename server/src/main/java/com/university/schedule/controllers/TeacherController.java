@@ -1,7 +1,7 @@
 package com.university.schedule.controllers;
 
 import com.university.schedule.dtos.TeacherDTO;
-import com.university.schedule.enums.Semester;
+
 import com.university.schedule.services.TeacherService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -29,13 +29,12 @@ public class TeacherController {
 
     @GetMapping
     public Page<TeacherDTO> search(@RequestParam(required = false) String keyword,
-                                   @RequestParam(required = false) Semester semester,
+                                   @RequestParam(required = false) String semester,
                                    Pageable pageable) {
         return teacherService.search(keyword, semester, pageable);
     }
 
-    @GetMapping("/available-for-registration")
-    public List<TeacherDTO> getAvailableForRegistration(@RequestParam Semester semester) {
+    public List<TeacherDTO> getAvailableForRegistration(@RequestParam String semester) {
         return teacherService.getAvailableForRegistration(semester);
     }
 

@@ -2,11 +2,9 @@ package com.university.schedule.services;
 
 import com.university.schedule.dtos.ClassroomDTO;
 import com.university.schedule.entities.Classroom;
-import com.university.schedule.enums.Semester;
-import com.university.schedule.exceptions.NotFoundException;
 import com.university.schedule.mappers.ClassroomMapper;
 import com.university.schedule.repositories.ClassroomRepository;
-import com.university.schedule.utils.SemesterUtils;
+import com.university.schedule.exceptions.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,7 +25,7 @@ public class ClassroomServiceImpl implements ClassroomService {
             throw new IllegalArgumentException("Classroom already exists with id " + dto.getId());
         }
         Classroom classroom = classroomMapper.toEntity(dto);
-        classroom.setSemester(SemesterUtils.parseSemester(dto.getSemester()));
+        classroom.setSemester(dto.getSemester());
         Classroom saved = classroomRepository.save(classroom);
         return classroomMapper.toDto(saved);
     }
@@ -42,7 +40,7 @@ public class ClassroomServiceImpl implements ClassroomService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ClassroomDTO> search(String keyword, Semester semester, Pageable pageable) {
+    public Page<ClassroomDTO> search(String keyword, String semester, Pageable pageable) {
         Page<Classroom> page;
         if (keyword == null || keyword.isBlank()) {
             if (semester != null) {
@@ -67,7 +65,7 @@ public class ClassroomServiceImpl implements ClassroomService {
         entity.setName(dto.getName());
         entity.setCapacity(dto.getCapacity());
         entity.setStatus(dto.getStatus());
-        entity.setSemester(SemesterUtils.parseSemester(dto.getSemester()));
+        entity.setSemester(dto.getSemester());
         return classroomMapper.toDto(classroomRepository.save(entity));
     }
 

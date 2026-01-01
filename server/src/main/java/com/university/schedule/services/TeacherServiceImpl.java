@@ -3,12 +3,10 @@ package com.university.schedule.services;
 import com.university.schedule.dtos.TeacherDTO;
 import com.university.schedule.entities.Teacher;
 import com.university.schedule.enums.RegistrationStatus;
-import com.university.schedule.enums.Semester;
-import com.university.schedule.exceptions.NotFoundException;
 import com.university.schedule.mappers.TeacherMapper;
 import com.university.schedule.repositories.TeacherRepository;
 import com.university.schedule.repositories.TeachingRegistrationRepository;
-import com.university.schedule.utils.SemesterUtils;
+import com.university.schedule.exceptions.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -34,7 +32,7 @@ public class TeacherServiceImpl implements TeacherService {
             throw new IllegalArgumentException("Teacher already exists with id " + dto.getId());
         }
         Teacher teacher = teacherMapper.toEntity(dto);
-        teacher.setSemester(SemesterUtils.parseSemester(dto.getSemester()));
+        teacher.setSemester(dto.getSemester());
         Teacher saved = teacherRepository.save(teacher);
         return teacherMapper.toDto(saved);
     }
@@ -49,7 +47,7 @@ public class TeacherServiceImpl implements TeacherService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<TeacherDTO> search(String keyword, Semester semester, Pageable pageable) {
+    public Page<TeacherDTO> search(String keyword, String semester, Pageable pageable) {
         Page<Teacher> page;
         if (keyword == null || keyword.isBlank()) {
             if (semester != null) {
@@ -69,7 +67,7 @@ public class TeacherServiceImpl implements TeacherService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<TeacherDTO> getAvailableForRegistration(Semester semester) {
+    public List<TeacherDTO> getAvailableForRegistration(String semester) {
         // Chỉ loại trừ teachers có registration APPROVED hoặc PENDING
         // Cho phép teachers có registration REJECTED tạo lại
         List<String> registeredTeacherIds = teachingRegistrationRepository.findTeacherIdsBySemesterAndStatuses(
@@ -89,7 +87,7 @@ public class TeacherServiceImpl implements TeacherService {
                 .orElseThrow(() -> new NotFoundException("Teacher not found with id " + id));
         entity.setName(dto.getName());
         entity.setStatus(dto.getStatus());
-        entity.setSemester(SemesterUtils.parseSemester(dto.getSemester()));
+        entity.setSemester(dto.getSemester());
         Teacher updated = teacherRepository.save(entity);
         return teacherMapper.toDto(updated);
     }

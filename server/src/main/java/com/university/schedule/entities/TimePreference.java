@@ -1,7 +1,6 @@
 package com.university.schedule.entities;
 
-import com.university.schedule.enums.Period;
-import com.university.schedule.enums.Semester;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -9,7 +8,7 @@ import java.time.DayOfWeek;
 
 @Entity
 @Table(name = "time_preferences",
-    uniqueConstraints = @UniqueConstraint(columnNames = {"teacher_id", "semester", "day", "period"}))
+    uniqueConstraints = @UniqueConstraint(columnNames = {"teacher_id", "semester", "day", "period_id"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -27,9 +26,8 @@ public class TimePreference {
     @JoinColumn(name = "teacher_id", nullable = false)
     private Teacher teacher;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "semester", nullable = false)
-    private Semester semester;
+    private String semester;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "teaching_registration_id", nullable = false, referencedColumnName = "id", columnDefinition = "varchar(100)")
@@ -39,8 +37,8 @@ public class TimePreference {
     @Column(name = "day", nullable = false)
     private DayOfWeek day;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "period", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "period_id", nullable = false)
     private Period period;
 
     @Column(name = "preference_value")

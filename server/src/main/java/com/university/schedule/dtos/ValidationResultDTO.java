@@ -17,3 +17,8 @@ public class ValidationResultDTO {
     private boolean valid;
     private List<String> errors;
 }
+
+
+
+
+

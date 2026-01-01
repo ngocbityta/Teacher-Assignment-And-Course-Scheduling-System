@@ -2,11 +2,11 @@ package com.university.schedule.controllers;
 
 import com.university.schedule.dtos.ScheduleDTO;
 import com.university.schedule.dtos.ScheduleGenerationResponseDTO;
-import com.university.schedule.enums.Semester;
+import com.university.schedule.dtos.ScheduleEvaluationResultDTO;
 import com.university.schedule.services.ScheduleGenerationService;
 import com.university.schedule.services.ScheduleService;
-import com.university.schedule.utils.SemesterUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -30,8 +30,21 @@ public class ScheduleController {
     }
 
     @GetMapping
-    public List<ScheduleDTO> getAll() {
-        return service.getAll();
+    public List<ScheduleDTO> getAll(
+            @RequestParam(required = false) String semester,
+            @RequestParam(required = false) String name) {
+        if (semester == null) {
+            return service.getAll();
+        }
+        if (name != null && !name.isEmpty()) {
+            return service.getBySemesterAndName(semester, name);
+        }
+        return service.getBySemester(semester);
+    }
+
+    @GetMapping("/sets")
+    public List<String> getScheduleSets(@RequestParam String semester) {
+        return service.getScheduleSets(semester);
     }
 
     @PutMapping("/{id}")
@@ -44,15 +57,26 @@ public class ScheduleController {
         service.delete(id);
     }
 
+    @DeleteMapping("/sets")
+    public void deleteScheduleSet(@RequestParam String name, @RequestParam String semester) {
+        service.deleteByName(semester, name);
+    }
+
     @PostMapping("/generate")
-    public ScheduleGenerationResponseDTO generateSchedule(@RequestParam String semester) {
-        Semester semesterEnum = SemesterUtils.parseSemester(semester);
-        return generationService.generateScheduleWithValue(semesterEnum);
+    public ScheduleGenerationResponseDTO generateSchedule(
+            @RequestParam String semester, 
+            @RequestParam(defaultValue = "heuristic") String algorithm,
+            @RequestParam(required = true) String scheduleName) {
+        return generationService.generateScheduleWithValue(semester, algorithm, scheduleName);
     }
 
     @GetMapping("/evaluate")
-    public Integer evaluateSchedule(@RequestParam String semester) {
-        Semester semesterEnum = SemesterUtils.parseSemester(semester);
-        return service.evaluateScheduleValue(semesterEnum);
+    public ResponseEntity<ScheduleEvaluationResultDTO> evaluateScheduleValue(
+            @RequestParam String semester,
+            @RequestParam(required = false) String name) {
+        if (name != null && !name.isEmpty()) {
+            return ResponseEntity.ok(service.evaluateScheduleValue(semester, name));
+        }
+        return ResponseEntity.ok(service.evaluateScheduleValue(semester));
     }
 }

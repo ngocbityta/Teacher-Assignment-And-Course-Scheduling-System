@@ -1,6 +1,5 @@
 package com.university.schedule.dtos;
 
-import com.university.schedule.enums.Period;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -21,8 +20,8 @@ public class TimePreferenceDTO {
     @NotBlank(message = "Semester is required")
     private String semester;
 
-    @NotNull(message = "Period is required")
-    private Period period;
+    @NotBlank(message = "Period ID is required")
+    private String periodId;
 
     @NotNull(message = "Day is required")
     private DayOfWeek day;
@@ -32,4 +31,6 @@ public class TimePreferenceDTO {
 
     @NotNull(message = "Preference value is required")
     private Integer preferenceValue;
+    
+    private PeriodDTO period; // Full period info for display
 }
