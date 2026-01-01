@@ -3,11 +3,11 @@ import { API_BASE } from "./index";
 if (!API_BASE) throw new Error("VITE_API_BASE is not set. See .env.example");
 
 export const PERIODS = [
-  { id: "CA1", name: "CA1 (Buổi 1)", start: "07:30", end: "09:30" },
-  { id: "CA2", name: "CA2 (Buổi 2)", start: "09:45", end: "11:45" },
-  { id: "CA3", name: "CA3 (Buổi 3)", start: "13:00", end: "15:00" },
-  { id: "CA4", name: "CA4 (Buổi 4)", start: "15:15", end: "17:15" },
-  { id: "CA5", name: "CA5 (Buổi 5)", start: "18:00", end: "20:00" },
+  { id: "period-ca1", name: "CA1 (Buổi 1)", start: "07:00", end: "08:30" },
+  { id: "period-ca2", name: "CA2 (Buổi 2)", start: "08:30", end: "10:00" },
+  { id: "period-ca3", name: "CA3 (Buổi 3)", start: "10:00", end: "11:30" },
+  { id: "period-ca4", name: "CA4 (Buổi 4)", start: "13:00", end: "14:30" },
+  { id: "period-ca5", name: "CA5 (Buổi 5)", start: "14:30", end: "16:00" },
 ];
 
 export const periodsAPI = {

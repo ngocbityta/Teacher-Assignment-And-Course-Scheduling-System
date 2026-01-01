@@ -1,6 +1,10 @@
 # Build stage
 FROM node:20-alpine AS builder
 
+# Build argument for API base URL
+ARG VITE_API_BASE=http://localhost:8080/api
+ENV VITE_API_BASE=$VITE_API_BASE
+
 WORKDIR /app
 
 # Copy package files

@@ -49,6 +49,73 @@
   flex-wrap: wrap;
 }
 
+.scheduleSelector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.scheduleSelector label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #744210;
+  white-space: nowrap;
+}
+
+.scheduleSelect {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 2px solid #fed7aa;
+  font-size: 0.95rem;
+  background-color: white;
+  color: #1a202c;
+  min-width: 180px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.scheduleSelect:focus {
+  outline: none;
+  border-color: #f97316;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+}
+
+.teacherFilterBottom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  border-radius: 8px;
+  border: 1px solid #fed7aa;
+}
+
+.teacherFilterBottom label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #744210;
+  white-space: nowrap;
+}
+
+.teacherSelectBottom {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 2px solid #fed7aa;
+  font-size: 0.9rem;
+  background-color: white;
+  color: #1a202c;
+  min-width: 200px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.teacherSelectBottom:focus {
+  outline: none;
+  border-color: #f97316;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+}
+
 .versionSelector {
   display: flex;
   align-items: center;
@@ -91,9 +158,33 @@
   background-color: #15803d;
 }
 
-.btnDeleteVersion {
+.btnCreateSchedule {
   border: none;
-  background-color: #ef4444;
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(22, 163, 74, 0.3);
+  margin-right: 24px;
+}
+
+.btnCreateSchedule:hover {
+  background: linear-gradient(135deg, #15803d 0%, #166534 100%);
+  box-shadow: 0 4px 8px rgba(22, 163, 74, 0.4);
+  transform: translateY(-1px);
+}
+
+.btnDeleteSchedule {
+  border: none;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   color: white;
   padding: 10px 20px;
   border-radius: 8px;
@@ -106,10 +197,11 @@
   gap: 6px;
   transition: all 0.2s;
   box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+  margin-left: 8px;
 }
 
-.btnDeleteVersion:hover {
-  background-color: #dc2626;
+.btnDeleteSchedule:hover {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
   box-shadow: 0 4px 8px rgba(239, 68, 68, 0.4);
   transform: translateY(-1px);
 }
@@ -189,10 +281,8 @@ h2 {
 }
 
 .layout {
-  display: grid;
-  grid-template-columns: 280px 1fr;
-  gap: 24px;
-  align-items: flex-start;
+  display: block;
+  width: 100%;
 }
 
 .teacherPanel {
@@ -703,15 +793,16 @@ td:not(:first-child) {
 
 .cellDeleteBtn {
   position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 20px;
-  height: 20px;
+  top: 6px;
+  right: 6px;
+  width: 24px;
+  height: 24px;
   border: none;
-  background-color: #ef4444;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   color: white;
   border-radius: 50%;
-  font-size: 12px;
+  font-size: 14px;
+  font-weight: 700;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -719,15 +810,16 @@ td:not(:first-child) {
   line-height: 1;
   padding: 0;
   transition: all 0.2s ease;
-  opacity: 0.9;
+  opacity: 0.95;
   z-index: 10;
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
 }
 
 .cellDeleteBtn:hover {
-  background-color: #dc2626;
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
   opacity: 1;
-  transform: scale(1.1);
-  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.4);
+  transform: scale(1.15);
+  box-shadow: 0 3px 6px rgba(239, 68, 68, 0.5);
 }
 
 .emptyCell {

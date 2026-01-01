@@ -1,16 +1,16 @@
 const SEMESTER_STORAGE_KEY = "selectedSemester";
-const DEFAULT_SEMESTER = "S_20251";
+const DEFAULT_SEMESTER = "2025-1";
 
 const SEMESTER_OPTIONS = [
-  { value: "S_20231", label: "2023-1" },
-  { value: "S_20232", label: "2023-2" },
-  { value: "S_20233", label: "2023-3" },
-  { value: "S_20241", label: "2024-1" },
-  { value: "S_20242", label: "2024-2" },
-  { value: "S_20243", label: "2024-3" },
-  { value: "S_20251", label: "2025-1" },
-  { value: "S_20252", label: "2025-2" },
-  { value: "S_20253", label: "2025-3" },
+  { value: "2023-1", label: "2023-1" },
+  { value: "2023-2", label: "2023-2" },
+  { value: "2023-3", label: "2023-3" },
+  { value: "2024-1", label: "2024-1" },
+  { value: "2024-2", label: "2024-2" },
+  { value: "2024-3", label: "2024-3" },
+  { value: "2025-1", label: "2025-1" },
+  { value: "2025-2", label: "2025-2" },
+  { value: "2025-3", label: "2025-3" },
 ];
 
 const VALID_SEMESTERS = new Set(SEMESTER_OPTIONS.map((option) => option.value));

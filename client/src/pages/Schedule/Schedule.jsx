@@ -7,6 +7,7 @@ import { teachersAPI } from "../../api/teachers";
 import { PERIODS } from "../../api/timeSlots";
 import { sectionAPI } from "../../api/section";
 import { classroomAPI } from "../../api/classroom";
+import { coursePreferenceAPI } from "../../api/coursePreference";
 
 const Tabs = { VIEW: "view", EDIT: "edit" };
 
@@ -15,17 +16,18 @@ const Schedule = () => {
   const [teachers, setTeachers] = useState([]);
   const [sections, setSections] = useState([]);
   const [classrooms, setClassrooms] = useState([]);
+  const [coursePreferences, setCoursePreferences] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [teachersLoading, setTeachersLoading] = useState(false);
   const [metaLoading, setMetaLoading] = useState(false);
   const [error, setError] = useState(null);
   const [generating, setGenerating] = useState(false);
+  const [generatingExact, setGeneratingExact] = useState(false);
   const [activeTab, setActiveTab] = useState(Tabs.VIEW);
   const [selectedTeacherId, setSelectedTeacherId] = useState(null);
   const [selectedBlock, setSelectedBlock] = useState(null);
+  const [selectedScheduleName, setSelectedScheduleName] = useState(null); // null means show all
+  const [scheduleSets, setScheduleSets] = useState([]); // list of schedule set names from backend
 
-  const [scheduleVersions, setScheduleVersions] = useState([]);
-  const [currentVersionId, setCurrentVersionId] = useState(null);
   const [currentScheduleValue, setCurrentScheduleValue] = useState(null);
   const [evaluatingValue, setEvaluatingValue] = useState(false);
 
@@ -37,85 +39,77 @@ const Schedule = () => {
   const [confirmModal, setConfirmModal] = useState(null);
   const [promptModal, setPromptModal] = useState(null);
 
-  const getStorageKey = () => {
-    const semester = getSelectedSemester();
-    return `schedule_versions_${semester || "default"}`;
-  };
-
-  const loadVersions = () => {
-    try {
-      const key = getStorageKey();
-      const stored = localStorage.getItem(key);
-      if (stored) {
-        const versions = JSON.parse(stored);
-        setScheduleVersions(versions);
-        if (versions.length > 0 && !currentVersionId) {
-          setCurrentVersionId(versions[0].id);
-        }
-        return versions;
-      }
-      return [];
-    } catch (err) {
-      console.error("Error loading versions:", err);
-      return [];
-    }
-  };
-
-  const saveVersions = (versions) => {
-    try {
-      const key = getStorageKey();
-      localStorage.setItem(key, JSON.stringify(versions));
-      setScheduleVersions(versions);
-    } catch (err) {
-      console.error("Error saving versions:", err);
-    }
-  };
-
-  const loadSchedules = async () => {
+  // Load schedules from database
+  const loadSchedules = async (scheduleName = selectedScheduleName) => {
     try {
       setLoading(true);
       setError(null);
       const semester = getSelectedSemester();
-      const data = await scheduleAPI.list({ semester });
-      const allSchedules = Array.isArray(data) ? data : [];
-      
-      let versions = loadVersions();
-      
-      if (versions.length === 0 && allSchedules.length > 0) {
-        const defaultVersion = {
-          id: `version_${Date.now()}`,
-          name: "Cách xếp lịch 1",
-          schedules: allSchedules,
-          createdAt: new Date().toISOString(),
-        };
-        versions = [defaultVersion];
-        saveVersions(versions);
-        setCurrentVersionId(defaultVersion.id);
-      } else if (versions.length === 0) {
-        const defaultVersion = {
-          id: `version_${Date.now()}`,
-          name: "Cách xếp lịch 1",
-          schedules: [],
-          createdAt: new Date().toISOString(),
-        };
-        versions = [defaultVersion];
-        saveVersions(versions);
-        setCurrentVersionId(defaultVersion.id);
+      const params = { semester };
+      if (scheduleName) {
+        params.name = scheduleName;
       }
-      
-      if (currentVersionId && versions.length > 0) {
-        const currentVersion = versions.find((v) => v.id === currentVersionId);
-        if (currentVersion) {
-          setSchedules(currentVersion.schedules || []);
-        } else {
-          setSchedules(allSchedules);
+      const data = await scheduleAPI.list(params);
+
+      // Backend now returns ScheduleDTO with assignments array (JSON format)
+      // Convert to flat list of schedule items for frontend display
+      const flatSchedules = [];
+
+      if (Array.isArray(data)) {
+        for (const scheduleDTO of data) {
+          // If schedule has assignments array (new format), convert to flat list
+          if (scheduleDTO.assignments && Array.isArray(scheduleDTO.assignments)) {
+            for (const assignment of scheduleDTO.assignments) {
+              // Convert day from "Mon", "Tue" to "MONDAY", "TUESDAY"
+              const dayMap = {
+                "Mon": "MONDAY",
+                "Tue": "TUESDAY",
+                "Wed": "WEDNESDAY",
+                "Thu": "THURSDAY",
+                "Fri": "FRIDAY",
+                "Sat": "SATURDAY",
+                "Sun": "SUNDAY"
+              };
+              const day = dayMap[assignment.day] || assignment.day.toUpperCase();
+
+              // Convert period order index to period ID
+              // Convert period order index to period ID
+              // Period order: 1 -> period-ca1, 2 -> period-ca2, etc.
+              const startPeriodOrder = parseInt(assignment.period);
+
+              // Find section to get duration
+              const section = sections.find(s => s.id === assignment.sectionId);
+              const duration = section ? (section.periodRequired || 1) : 1;
+
+              for (let i = 0; i < duration; i++) {
+                const currentPeriodOrder = startPeriodOrder + i;
+                // Check bounds
+                if (currentPeriodOrder - 1 >= PERIODS.length) break;
+
+                const periodId = PERIODS[currentPeriodOrder - 1]?.id || `period-ca${currentPeriodOrder}`;
+
+                flatSchedules.push({
+                  id: `${scheduleDTO.id}_${assignment.teacherId}_${assignment.sectionId}_${day}_${periodId}_${assignment.classroomId}`,
+                  teacherId: assignment.teacherId,
+                  sectionId: assignment.sectionId,
+                  classroomId: assignment.classroomId,
+                  day: day,
+                  periodId: periodId,
+                  period: periodId, // For backward compatibility
+                  // Additional fields from scheduleDTO if available
+                  semester: scheduleDTO.semester,
+                  name: scheduleDTO.name,
+                });
+              }
+            }
+          } else {
+            // Old format (if any) - keep as is
+            flatSchedules.push(scheduleDTO);
+          }
         }
-      } else if (versions.length > 0) {
-        setCurrentVersionId(versions[0].id);
-        setSchedules(versions[0].schedules || []);
-      } else {
-        setSchedules(allSchedules);
       }
+
+      setSchedules(flatSchedules);
     } catch (err) {
       const errorMsg = err.message || "Không thể tải lịch phân công";
       setError(errorMsg);
@@ -126,33 +120,21 @@ const Schedule = () => {
     }
   };
 
-  const saveSchedulesToDatabase = async (schedulesToSave) => {
+  // Load schedule sets from backend
+  const loadScheduleSets = async () => {
     try {
       const semester = getSelectedSemester();
-      if (!semester) {
-        console.warn("No semester selected, skipping database save");
-        return;
-      }
-
-      const existingSchedules = await scheduleAPI.list({ semester });
-      const existingIds = (existingSchedules || []).map((s) => s.id);
-
-      if (existingIds.length > 0) {
-        await Promise.all(existingIds.map((id) => scheduleAPI.remove(id)));
-      }
-
-      if (schedulesToSave.length > 0) {
-        await Promise.all(
-          schedulesToSave.map((schedule) => scheduleAPI.create(schedule))
-        );
-      }
+      if (!semester) return;
+      const sets = await scheduleAPI.listSets(semester);
+      setScheduleSets(Array.isArray(sets) ? sets : []);
     } catch (err) {
-      console.error("Error saving schedules to database:", err);
-      toast.error("Lỗi khi lưu lịch vào database: " + (err.message || ""));
+      console.error("Error loading schedule sets:", err);
+      setScheduleSets([]);
     }
   };
 
-  const evaluateScheduleValue = async () => {
+  // Evaluate schedule value from database
+  const evaluateScheduleValue = async (scheduleName = selectedScheduleName) => {
     try {
       setEvaluatingValue(true);
       const semester = getSelectedSemester();
@@ -160,15 +142,8 @@ const Schedule = () => {
         setCurrentScheduleValue(null);
         return;
       }
-      const value = await scheduleAPI.evaluate(semester);
+      const value = await scheduleAPI.evaluate(semester, scheduleName);
       setCurrentScheduleValue(value);
-      
-      if (currentVersionId) {
-        const updated = scheduleVersions.map((v) =>
-          v.id === currentVersionId ? { ...v, objectiveValue: value } : v
-        );
-        saveVersions(updated);
-      }
     } catch (err) {
       console.error("Error evaluating schedule value:", err);
       setCurrentScheduleValue(null);
@@ -177,221 +152,247 @@ const Schedule = () => {
     }
   };
 
-  const updateCurrentVersionSchedules = async (newSchedules) => {
-    if (!currentVersionId) {
-      const newId = createNewVersion();
-      const updated = scheduleVersions.map((v) =>
-        v.id === newId ? { ...v, schedules: newSchedules } : v
-      );
-      saveVersions(updated);
-      setSchedules(newSchedules);
-      await saveSchedulesToDatabase(newSchedules);
-      await evaluateScheduleValue();
-      return;
-    }
-    const updated = scheduleVersions.map((v) =>
-      v.id === currentVersionId ? { ...v, schedules: newSchedules } : v
-    );
-    saveVersions(updated);
-    setSchedules(newSchedules);
-    await saveSchedulesToDatabase(newSchedules);
-    await evaluateScheduleValue();
-  };
-
-  const createNewVersion = (name = null) => {
-    const newId = `version_${Date.now()}`;
-    const newName = name || `Cách xếp lịch ${scheduleVersions.length + 1}`;
-    const newVersion = {
-      id: newId,
-      name: newName,
-      schedules: [],
-      createdAt: new Date().toISOString(),
-    };
-    const updated = [...scheduleVersions, newVersion];
-    saveVersions(updated);
-    setCurrentVersionId(newId);
-    setSchedules([]);
-    return newId;
-  };
-
-  const deleteVersion = (versionId) => {
-    setConfirmModal({
-      message: "Xác nhận xóa cách xếp lịch này?",
-      onConfirm: () => {
-        const updated = scheduleVersions.filter((v) => v.id !== versionId);
-        
-        if (updated.length === 0) {
-          const newId = `version_${Date.now()}`;
-          const newVersion = {
-            id: newId,
-            name: "Cách xếp lịch 1",
-            schedules: [],
-            objectiveValue: null,
-            createdAt: new Date().toISOString(),
-          };
-          saveVersions([newVersion]);
-          setCurrentVersionId(newId);
-          setSchedules([]);
-          setCurrentScheduleValue(null);
-        } else {
-          saveVersions(updated);
-          
-          if (currentVersionId === versionId) {
-            setCurrentVersionId(updated[0].id);
-            const versionSchedules = updated[0].schedules || [];
-            setSchedules(versionSchedules);
-            if (updated[0].objectiveValue !== null && updated[0].objectiveValue !== undefined) {
-              setCurrentScheduleValue(updated[0].objectiveValue);
-            } else {
-              evaluateScheduleValue();
-            }
-          }
-        }
-        
-        toast.success("Đã xóa cách xếp lịch.");
-        setConfirmModal(null);
-      },
-      onCancel: () => setConfirmModal(null),
-    });
-  };
-
-  const switchVersion = async (versionId) => {
-    const version = scheduleVersions.find((v) => v.id === versionId);
-    if (version) {
-      setCurrentVersionId(versionId);
-      const versionSchedules = version.schedules || [];
-      setSchedules(versionSchedules);
-      if (version.objectiveValue !== null && version.objectiveValue !== undefined) {
-        setCurrentScheduleValue(version.objectiveValue);
-      } else {
-        await evaluateScheduleValue();
-      }
-      await saveSchedulesToDatabase(versionSchedules);
-    }
+  // Reload schedules and re-evaluate after any change
+  const refreshSchedulesAndEvaluate = async () => {
+    await loadSchedules(selectedScheduleName);
+    await evaluateScheduleValue(selectedScheduleName);
+    await loadScheduleSets(); // Also refresh the list of schedule sets
   };
 
   const loadTeachers = async () => {
     try {
-      setTeachersLoading(true);
       const data = await teachersAPI.list();
       setTeachers(Array.isArray(data) ? data : []);
-      if (data && data.length > 0 && !selectedTeacherId) {
-        const firstId = data[0].id || data[0]._id;
-        setSelectedTeacherId(firstId);
-      }
     } catch (err) {
       console.error("Error loading teachers:", err);
-    } finally {
-      setTeachersLoading(false);
     }
   };
 
   const loadMeta = async () => {
     try {
       setMetaLoading(true);
-      const [{ items: sectionItems }, classroomItems] = await Promise.all([
+      const [{ items: sectionItems }, classroomItems, prefItems] = await Promise.all([
         sectionAPI.list(),
         classroomAPI.list(),
+        coursePreferenceAPI.list(),
       ]);
       setSections(sectionItems || []);
       setClassrooms(classroomItems || []);
+      setCoursePreferences(prefItems || []);
     } catch (err) {
-      console.error("Error loading sections/classrooms:", err);
+      console.error("Error loading sections/classrooms/prefs:", err);
     } finally {
       setMetaLoading(false);
     }
   };
 
-  const isCurrentVersionEmpty = useMemo(() => {
-    if (!schedules || schedules.length === 0) return true;
-    if (currentVersionId) {
-      const currentVersion = scheduleVersions.find(v => v.id === currentVersionId);
-      if (currentVersion && currentVersion.schedules && currentVersion.schedules.length > 0) {
-        return false;
-      }
-    }
-    return true;
-  }, [currentVersionId, scheduleVersions, schedules]);
 
-  const handleGenerate = async () => {
+  const handleGenerate = async (algorithm = 'heuristic') => {
     try {
-      setGenerating(true);
+      if (algorithm === 'exact') {
+        setGeneratingExact(true);
+      } else {
+        setGenerating(true);
+      }
       setError(null);
       const semester = getSelectedSemester();
       if (!semester) {
-        setError("Please select a semester first");
+        setError("Vui lòng chọn học kỳ trước.");
         return;
       }
-      const data = await scheduleAPI.generate(semester);
-      const newSchedules = Array.isArray(data?.schedules) ? data.schedules : (Array.isArray(data) ? data : []);
-      const objectiveValue = data?.objectiveValue ?? null;
-      
-      if (currentVersionId && isCurrentVersionEmpty) {
-        const updated = scheduleVersions.map((v) =>
-          v.id === currentVersionId
-            ? {
-                ...v,
-                schedules: newSchedules,
-                objectiveValue: objectiveValue,
-                createdAt: v.createdAt || new Date().toISOString(),
-              }
-            : v
-        );
-        saveVersions(updated);
-        setSchedules(newSchedules);
-        setCurrentScheduleValue(objectiveValue);
-      } else {
-        const newId = `version_${Date.now()}`;
-        const newName = `Tự động tạo - ${new Date().toLocaleString("vi-VN")}`;
-        const newVersion = {
-          id: newId,
-          name: newName,
-          schedules: newSchedules,
-          objectiveValue: objectiveValue,
-          createdAt: new Date().toISOString(),
-        };
-        const updated = [...scheduleVersions, newVersion];
-        saveVersions(updated);
-        setCurrentVersionId(newId);
-        setSchedules(newSchedules);
-        setCurrentScheduleValue(objectiveValue);
+
+      // Phải chọn một schedule cụ thể để xếp lịch tự động
+      if (!selectedScheduleName) {
+        setError("Vui lòng chọn một lịch cụ thể hoặc tạo lịch mới trước khi xếp lịch tự động.");
+        return;
       }
-      
-      toast.success(`Tạo lịch thành công! Đã tạo ${newSchedules.length} phân công.`);
+
+      // Check if schedule is not empty
+      if (schedules.length > 0) {
+        const confirmMsg = `Lịch "${selectedScheduleName}" đã có ${schedules.length} phân công. Vui lòng tạo bản lịch mới hoặc xóa các phân công hiện tại trước khi xếp lịch tự động.`;
+        toast.warning(confirmMsg, { autoClose: 5000 });
+        setError(confirmMsg);
+        return;
+      }
+
+      // Pass the current schedule name to generate API
+      await scheduleAPI.generate(semester, algorithm, selectedScheduleName);
+
+      // Refresh schedule sets list first
+      await loadScheduleSets();
+
+      // Reload schedules from backend to ensure consistency
+      await loadSchedules(selectedScheduleName);
+      await evaluateScheduleValue(selectedScheduleName);
+
+      toast.success(`Tạo lịch (${algorithm === 'exact' ? 'Chính xác' : 'Heuristic'}) thành công!`);
     } catch (err) {
       let errorMsg = err.message || "Không thể tạo lịch tự động";
-      
-      if (errorMsg.includes("Không thể tạo lịch tự động")) {
-        setError(errorMsg);
-        toast.error(errorMsg, { autoClose: 5000 });
-      } else {
-        setError(errorMsg);
-        toast.error(errorMsg);
+
+      if (errorMsg.includes("dataset too large")) {
+        errorMsg = "Dữ liệu quá lớn để chạy thuật toán chính xác (Giới hạn: 10 GV, 20 HP). Vui lòng dùng Heuristic.";
       }
+
+      setError(errorMsg);
+      toast.error(errorMsg, { autoClose: 5000 });
       console.error("Error generating schedule:", err);
     } finally {
       setGenerating(false);
+      setGeneratingExact(false);
+    }
+  };
+
+  const handleClearSchedules = async () => {
+    // Chỉ cho phép xóa khi có schedule được chọn
+    if (!selectedScheduleName) {
+      toast.warning("Vui lòng chọn một lịch để xóa.");
+      return;
+    }
+
+    const deleteMessage = `Xác nhận xóa lịch "${selectedScheduleName}"? Lịch này sẽ bị xóa vĩnh viễn và không thể khôi phục.`;
+
+    setConfirmModal({
+      message: deleteMessage,
+      onConfirm: async () => {
+        try {
+          const semester = getSelectedSemester();
+          if (!semester) {
+            toast.warning("Vui lòng chọn học kỳ trước.");
+            setConfirmModal(null);
+            return;
+          }
+
+          // Chỉ xóa schedule với tên được chọn
+          await scheduleAPI.removeSet(selectedScheduleName, semester);
+
+          // Xóa schedule khỏi local state
+          setScheduleSets(prev => prev.filter(name => name !== selectedScheduleName));
+
+          // Chuyển sang schedule khác hoặc null
+          const remainingSets = scheduleSets.filter(name => name !== selectedScheduleName);
+          if (remainingSets.length > 0) {
+            setSelectedScheduleName(remainingSets[0]);
+          } else {
+            setSelectedScheduleName(null);
+            setSchedules([]);
+            setCurrentScheduleValue(null);
+          }
+
+          await loadScheduleSets(); // Refresh the list from backend
+          toast.success(`Đã xóa lịch "${selectedScheduleName}".`);
+        } catch (err) {
+          console.error(err);
+          toast.error("Xóa thất bại: " + (err.message || ""));
+        }
+        setConfirmModal(null);
+      },
+      onCancel: () => setConfirmModal(null),
+    });
+  };
+
+  // Show prompt modal to ask for schedule name
+  const handleCreateNewSchedule = () => {
+    const defaultName = `Lịch ${new Date().toLocaleDateString('vi-VN')} ${new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`;
+    setPromptModal({
+      title: "Tạo lịch mới",
+      message: "Nhập tên cho lịch mới:",
+      defaultValue: defaultName,
+      onConfirm: async (name) => {
+        setPromptModal(null);
+        if (!name || !name.trim()) {
+          toast.warning("Vui lòng nhập tên cho lịch.");
+          return;
+        }
+        await doCreateNewSchedule(name.trim());
+      },
+      onCancel: () => setPromptModal(null),
+    });
+  };
+
+  // Actually create the new schedule after getting the name
+  const doCreateNewSchedule = async (scheduleName) => {
+    try {
+      const semester = getSelectedSemester();
+      if (!semester) {
+        toast.warning("Vui lòng chọn học kỳ trước.");
+        return;
+      }
+
+      // Check if name already exists
+      if (scheduleSets.includes(scheduleName)) {
+        toast.warning(`Lịch "${scheduleName}" đã tồn tại. Vui lòng chọn tên khác.`);
+        return;
+      }
+
+      // Create empty schedule in database
+      const scheduleId = `${scheduleName}_${semester}`;
+      const emptySchedule = {
+        id: scheduleId,
+        semester,
+        name: scheduleName,
+        assignments: [], // Empty array
+        statistics: {
+          numAssignments: 0,
+          numClassrooms: 0,
+          numCourses: 0,
+          numSections: 0,
+          numTeachers: 0
+        }
+      };
+
+      await scheduleAPI.create(emptySchedule);
+
+      // Switch to the new schedule set
+      setSelectedScheduleName(scheduleName);
+      setSchedules([]);
+      setCurrentScheduleValue(null);
+
+      // Refresh schedule sets list from backend
+      await loadScheduleSets();
+
+      toast.success(`Đã tạo lịch mới: "${scheduleName}". Hãy xếp lịch tự động hoặc thêm thủ công.`);
+    } catch (err) {
+      console.error(err);
+      toast.error("Tạo lịch mới thất bại: " + (err.message || ""));
     }
   };
 
   useEffect(() => {
-    loadVersions();
-    loadSchedules();
-    loadTeachers();
-    loadMeta();
+    const init = async () => {
+      try {
+        await loadTeachers();
+        await loadMeta();
+
+        const semester = getSelectedSemester();
+        if (semester) {
+          const sets = await scheduleAPI.listSets(semester);
+          const validSets = Array.isArray(sets) ? sets : [];
+          setScheduleSets(validSets);
+
+          if (validSets.length > 0 && !selectedScheduleName) {
+            // Auto select the first set if none selected
+            setSelectedScheduleName(validSets[0]);
+          }
+        }
+      } catch (err) {
+        console.error("Error initializing schedule page:", err);
+      }
+    };
+    init();
   }, []);
 
+  // Reload schedules when selected schedule name changes
   useEffect(() => {
-    if (currentVersionId) {
-      loadSchedules();
+    if (selectedScheduleName) {
+      loadSchedules(selectedScheduleName);
+      evaluateScheduleValue(selectedScheduleName);
+    } else {
+      // If no name selected, clear schedules to avoid confusion
+      setSchedules([]);
+      setCurrentScheduleValue(null);
     }
-  }, [currentVersionId]);
-
-  useEffect(() => {
-    if (schedules.length > 0) {
-      evaluateScheduleValue();
-    }
-  }, [schedules]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedScheduleName]);
 
   const selectedTeacher = useMemo(
     () => teachers.find((t) => (t.id || t._id) === selectedTeacherId) || null,
@@ -402,7 +403,7 @@ const Schedule = () => {
     () =>
       selectedTeacherId
         ? schedules.filter((s) => s.teacherId === selectedTeacherId)
-        : [],
+        : schedules,
     [schedules, selectedTeacherId]
   );
 
@@ -431,6 +432,42 @@ const Schedule = () => {
 
   const periodIds = useMemo(() => PERIODS.map((p) => p.id), []);
 
+  // Helper to extract period ID from schedule, handling both 'period' and 'periodId' fields
+  const getPeriodId = React.useCallback((schedule) => {
+    let pid = schedule.periodId || schedule.period;
+    // If period is an object (from backend populate), extract its id
+    if (pid && typeof pid === 'object') {
+      pid = pid.id || pid._id;
+    }
+    return pid;
+  }, []);
+
+  // Filter sections based on selected teacher's eligibility
+  const filteredSections = useMemo(() => {
+    if (!selectedTeacherId) return sections;
+
+    // Get teacher's eligible courses from preferences
+    // Note: If no preference record exists, teacher is not eligible (or we assume strict mode)
+    // Preference value doesn't strictly matter for "eligibility" unless we enforce "score > 0"
+    // Usually simple existence of record implies ability to teach.
+    // Also ensuring semester matches.
+    const semester = getSelectedSemester();
+    const eligibleCourseIds = coursePreferences
+      .filter(cp =>
+        (cp.teacherId === selectedTeacherId || (cp.teacher && cp.teacher.id === selectedTeacherId)) &&
+        (!cp.semester || cp.semester === semester)
+      )
+      .map(cp => cp.courseId || (cp.course && cp.course.id));
+
+    // Filter out sections that are already assigned (assigned assignments exist in 'schedules')
+    const assignedSectionIds = schedules.map(s => s.sectionId);
+
+    return sections.filter(s =>
+      eligibleCourseIds.includes(s.courseId) &&
+      !assignedSectionIds.includes(s.id)
+    );
+  }, [sections, selectedTeacherId, coursePreferences, schedules]);
+
   const selectedSection = useMemo(
     () => sections.find((s) => s.id === formSectionId) || null,
     [sections, formSectionId]
@@ -450,7 +487,7 @@ const Schedule = () => {
         const windowPeriods = periodIds.slice(startIdx, startIdx + requiredPeriods);
 
         const conflictTeacher = teacherAllSchedules.some(
-          (s) => s.day === day && windowPeriods.includes(s.period)
+          (s) => s.day === day && windowPeriods.includes(getPeriodId(s))
         );
         if (conflictTeacher) continue;
 
@@ -464,7 +501,7 @@ const Schedule = () => {
             (s) =>
               s.classroomId === id &&
               s.day === day &&
-              windowPeriods.includes(s.period)
+              windowPeriods.includes(getPeriodId(s))
           );
           return !conflictRoom;
         });
@@ -505,7 +542,7 @@ const Schedule = () => {
         (s) =>
           s.classroomId === id &&
           s.day === day &&
-          windowPeriods.includes(s.period)
+          windowPeriods.includes(getPeriodId(s))
       );
       return !conflictRoom;
     });
@@ -520,7 +557,7 @@ const Schedule = () => {
       });
     });
 
-    if (!selectedTeacherId || teacherSchedules.length === 0) return matrix;
+    if (teacherSchedules.length === 0) return matrix;
 
     const getIndex = (pid) => periodIds.indexOf(pid);
 
@@ -538,46 +575,55 @@ const Schedule = () => {
       });
 
       groups.forEach((list) => {
-        list.sort((a, b) => getIndex(a.period) - getIndex(b.period));
+        // Use getPeriodId for sorting
+        list.sort((a, b) => getIndex(getPeriodId(a)) - getIndex(getPeriodId(b)));
 
         let startIdx = 0;
         for (let i = 0; i < list.length; i++) {
           const isLast = i === list.length - 1;
-          const currentIdx = getIndex(list[i].period);
-          const nextIdx = !isLast ? getIndex(list[i + 1].period) : null;
-          
+          const currentPid = getPeriodId(list[i]);
+          const currentIdx = getIndex(currentPid);
+          const nextPid = !isLast ? getPeriodId(list[i + 1]) : null;
+          const nextIdx = nextPid !== null ? getIndex(nextPid) : null;
+
           const isBreak = isLast || (nextIdx !== null && nextIdx !== currentIdx + 1);
 
           if (isBreak) {
             const first = list[startIdx];
             const last = list[i];
-            
+            const firstPid = getPeriodId(first);
+            const lastPid = getPeriodId(last);
+
             const blockSchedules = list.slice(startIdx, i + 1);
-            
-            const firstIdx = getIndex(first.period);
-            const lastIdx = getIndex(last.period);
+
+            const firstIdx = getIndex(firstPid);
+            const lastIdx = getIndex(lastPid);
             const span = lastIdx - firstIdx + 1;
-            
-            if (blockSchedules.length > 0) {
+
+            if (blockSchedules.length > 0 && firstIdx >= 0 && lastIdx >= 0) {
+              const section = sections.find(s => s.id === first.sectionId);
+              const classroom = classrooms.find(c => c.id === first.classroomId || c._id === first.classroomId);
+
               const block = {
                 day,
-                startPeriodId: first.period,
-                endPeriodId: last.period,
-                sectionName: first.sectionName,
+                startPeriodId: firstPid,
+                endPeriodId: lastPid,
+                sectionName: section ? section.name : first.sectionId,
                 sectionId: first.sectionId,
-                classroomName: first.classroomName,
+                classroomName: classroom ? classroom.name : first.classroomId,
                 classroomId: first.classroomId,
                 schedules: blockSchedules,
               };
 
-              matrix[day][first.period] = {
+              matrix[day][firstPid] = {
                 type: "block",
                 span,
                 block,
               };
 
               for (let k = startIdx + 1; k <= i; k++) {
-                matrix[day][list[k].period] = { type: "spanned" };
+                const kPid = getPeriodId(list[k]);
+                matrix[day][kPid] = { type: "spanned" };
               }
             }
 
@@ -588,7 +634,7 @@ const Schedule = () => {
     });
 
     return matrix;
-  }, [dayKeys, periodIds, selectedTeacherId, teacherSchedules]);
+  }, [dayKeys, periodIds, teacherSchedules, getPeriodId, sections, classrooms]);
 
   const formatPeriodRange = (startId, endId) => {
     if (!startId) return "";
@@ -603,53 +649,59 @@ const Schedule = () => {
           <h2>Xếp lịch</h2>
           {currentScheduleValue !== null && (
             <div className={styles.scheduleValue}>
-              <span className={styles.valueLabel}>Giá trị:</span>
-              <span className={styles.valueNumber}>
-                {evaluatingValue ? "..." : currentScheduleValue}
-              </span>
+              {typeof currentScheduleValue === 'object' ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span className={styles.valueLabel}>Tổng giá trị:</span>
+                    <span className={styles.valueNumber}>
+                      {evaluatingValue ? "..." : Math.round(currentScheduleValue.totalScore || 0)}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.9)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <span>Workload Pen: {Math.round((currentScheduleValue.workloadPenalty || 0) * 10) / 10}</span>
+                    <span>Compact Pen: {Math.round((currentScheduleValue.compactnessPenalty || 0) * 10) / 10}</span>
+                    <span>Course Pref: {Math.round((currentScheduleValue.coursePreferenceScore || 0) * 10) / 10}</span>
+                    <span>Time Pref: {Math.round((currentScheduleValue.timePreferenceScore || 0) * 10) / 10}</span>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <span className={styles.valueLabel}>Giá trị:</span>
+                  <span className={styles.valueNumber}>
+                    {evaluatingValue ? "..." : currentScheduleValue}
+                  </span>
+                </>
+              )}
             </div>
           )}
         </div>
         <div className={styles.headerActions}>
-          <div className={styles.versionSelector}>
-            <label>Cách xếp lịch:</label>
+          <div className={styles.scheduleSelector}>
+            <label htmlFor="scheduleSelect">Lịch:</label>
             <select
-              value={currentVersionId || ""}
-              onChange={(e) => switchVersion(e.target.value)}
-              className={styles.versionSelect}
-            >
-              {scheduleVersions.length === 0 ? (
-                <option value="">Chưa có cách xếp lịch</option>
-              ) : (
-                scheduleVersions.map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.name}
-                  </option>
-                ))
-              )}
-            </select>
-            <button
-              className={styles.btnNewVersion}
-              onClick={() => {
-                setPromptModal({
-                  title: "Thêm cách xếp lịch mới",
-                  message: "Nhập tên cho cách xếp lịch mới:",
-                  defaultValue: "",
-                  onConfirm: (name) => {
-                    if (name && name.trim()) {
-                      createNewVersion(name.trim());
-                    } else {
-                      toast.warning("Vui lòng nhập tên cho cách xếp lịch.");
-                    }
-                    setPromptModal(null);
-                  },
-                  onCancel: () => setPromptModal(null),
-                });
+              id="scheduleSelect"
+              className={styles.scheduleSelect}
+              value={selectedScheduleName || ""}
+              onChange={async (e) => {
+                const newScheduleName = e.target.value || null;
+                setSelectedScheduleName(newScheduleName);
               }}
             >
-              Thêm mới
-            </button>
+              <option value="">-- Tất cả lịch --</option>
+              {scheduleSets.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
           </div>
+          <button
+            className={styles.btnCreateSchedule}
+            onClick={handleCreateNewSchedule}
+            title="Tạo một bản lịch mới rỗng"
+          >
+            ➕ Tạo lịch
+          </button>
           <div className={styles.tabButtons}>
             <button
               className={activeTab === Tabs.VIEW ? styles.tabActive : ""}
@@ -664,14 +716,25 @@ const Schedule = () => {
               Chỉnh sửa thủ công
             </button>
           </div>
-        <button
-          className={styles.generateButton}
-          onClick={handleGenerate}
-          disabled={generating || !isCurrentVersionEmpty}
-          title={!isCurrentVersionEmpty ? "Cách xếp lịch hiện tại đã có dữ liệu. Vui lòng tạo cách xếp lịch mới hoặc xóa dữ liệu hiện tại." : ""}
-        >
-          {generating ? "Đang tạo lịch..." : "Tạo lịch tự động"}
-        </button>
+          <div className={styles.buttonGroup}>
+            <button
+              className={styles.generateButton}
+              onClick={() => handleGenerate('heuristic')}
+              disabled={generating || generatingExact}
+              title="Chạy nhanh, kết quả gần tối ưu"
+            >
+              {generating ? "Đang chạy..." : "Xếp lịch (Heuristic)"}
+            </button>
+            <button
+              className={`${styles.generateButton} ${styles.exactButton}`}
+              onClick={() => handleGenerate('exact')}
+              disabled={generating || generatingExact}
+              title="Chạy lâu, kết quả tối ưu (chỉ dùng cho dữ liệu nhỏ)"
+              style={{ backgroundColor: '#8e44ad', marginLeft: '8px' }}
+            >
+              {generatingExact ? "Đang giải..." : "Xếp lịch (Exact)"}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -681,50 +744,27 @@ const Schedule = () => {
         <div className={styles.loading}>Đang tải lịch phân công...</div>
       ) : (
         <div className={styles.layout}>
-          <div className={styles.teacherPanel}>
-            <h3>Giảng viên</h3>
-            {teachersLoading ? (
-              <div className={styles.loading}>Đang tải danh sách giảng viên...</div>
-            ) : teachers.length === 0 ? (
-              <div className={styles.empty}>Chưa có giảng viên nào.</div>
-            ) : (
-              <ul className={styles.teacherList}>
+          <div className={styles.schedulePanel}>
+            <div className={styles.teacherFilterBottom}>
+              <label htmlFor="teacherSelectBottom">Lọc theo giảng viên:</label>
+              <select
+                id="teacherSelectBottom"
+                className={styles.teacherSelectBottom}
+                value={selectedTeacherId || ""}
+                onChange={(e) => setSelectedTeacherId(e.target.value || null)}
+              >
+                <option value="">-- Tất cả giảng viên --</option>
                 {teachers.map((t) => {
                   const id = t.id || t._id;
-                  const active = id === selectedTeacherId;
                   const displayName = t.name || id;
-                  const initial = (displayName || "?").toString().charAt(0).toUpperCase();
                   return (
-                    <li
-                      key={id}
-                      className={`${styles.teacherItem} ${active ? styles.teacherItemActive : ""}`}
-                      onClick={() => setSelectedTeacherId(id)}
-                    >
-                      <div className={styles.teacherItemInner}>
-                        <div className={styles.teacherAvatarSmall}>
-                          {t.avatar ? (
-                            <img
-                              src={t.avatar}
-                              alt={displayName}
-                              className={styles.teacherAvatarImg}
-                            />
-                          ) : (
-                            <span>{initial}</span>
-                          )}
-                        </div>
-                        <div>
-                          <div className={styles.teacherName}>{displayName}</div>
-                          <div className={styles.teacherId}>Mã: {id}</div>
-                        </div>
-                      </div>
-                    </li>
+                    <option key={id} value={id}>
+                      {displayName} ({id})
+                    </option>
                   );
                 })}
-              </ul>
-            )}
-          </div>
-
-          <div className={styles.schedulePanel}>
+              </select>
+            </div>
             {activeTab === Tabs.EDIT && (
               <div className={styles.editPanel}>
                 {!showAddForm ? (
@@ -751,190 +791,261 @@ const Schedule = () => {
                       </button>
                     </div>
                     <div className={styles.formGrid}>
-                  <div className={styles.formGroup}>
-                    <label>Học phần</label>
-                    <select
-                      value={formSectionId}
-                      onChange={(e) => {
-                        setFormSectionId(e.target.value);
-                        setFormTimeKey("");
-                        setFormClassroomId("");
-                      }}
-                    >
-                      <option value="">-- Chọn học phần --</option>
-                      {sections.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.name} ({s.id})
-                        </option>
-                      ))}
-                    </select>
-                    {selectedSection && (
-                      <div className={styles.helperText}>
-                        Cần {selectedSection.periodRequired} kíp liên tiếp, {selectedSection.requiredSeats} chỗ.
+                      <div className={styles.formGroup}>
+                        <label>Học phần</label>
+                        <select
+                          value={formSectionId}
+                          onChange={(e) => {
+                            setFormSectionId(e.target.value);
+                            setFormTimeKey("");
+                            setFormClassroomId("");
+                          }}
+                        >
+                          <option value="">-- Chọn học phần --</option>
+                          {filteredSections.map((s) => (
+                            <option key={s.id} value={s.id}>
+                              {s.name} ({s.id})
+                            </option>
+                          ))}
+                        </select>
+                        {selectedSection && (
+                          <div className={styles.helperText}>
+                            Cần {selectedSection.periodRequired} kíp liên tiếp, {selectedSection.requiredSeats} chỗ.
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                  <div className={styles.formGroup}>
-                    <label>Khoảng thời gian (kíp liên tiếp trống)</label>
-                    <select
-                      value={formTimeKey}
-                      onChange={(e) => {
-                        setFormTimeKey(e.target.value);
-                        setFormClassroomId("");
-                      }}
-                      disabled={!selectedTeacherId || !formSectionId}
-                    >
-                      <option value="">
-                        {(!selectedTeacherId || !formSectionId)
-                          ? "-- Chọn giảng viên & học phần trước --"
-                          : computeAvailableTimeOptions.length === 0
-                            ? "Không còn khoảng thời gian trống phù hợp"
-                            : "-- Chọn khoảng thời gian --"}
-                      </option>
-                      {computeAvailableTimeOptions.map((opt) => (
-                        <option key={opt.key} value={opt.key}>
-                          {formatDay(opt.day)}: {formatPeriodRange(opt.startPeriodId, opt.endPeriodId)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className={styles.formGroup}>
-                    <label>Lớp học (phòng trống & đủ chỗ)</label>
-                    <select
-                      value={formClassroomId}
-                      onChange={(e) => setFormClassroomId(e.target.value)}
-                      disabled={!selectedTimeOption}
-                    >
-                      <option value="">
-                        {!selectedTimeOption
-                          ? "-- Chọn khoảng thời gian trước --"
-                          : availableClassroomsForSelection.length === 0
-                            ? "Không còn phòng phù hợp"
-                            : "-- Chọn phòng học --"}
-                      </option>
-                      {availableClassroomsForSelection.map((c) => {
-                        const id = c.id || c._id;
-                        return (
-                          <option key={id} value={id}>
-                            {c.name} ({id}) - {c.capacity} chỗ
+                      <div className={styles.formGroup}>
+                        <label>Khoảng thời gian (kíp liên tiếp trống)</label>
+                        <select
+                          value={formTimeKey}
+                          onChange={(e) => {
+                            setFormTimeKey(e.target.value);
+                            setFormClassroomId("");
+                          }}
+                          disabled={!selectedTeacherId || !formSectionId}
+                        >
+                          <option value="">
+                            {(!selectedTeacherId || !formSectionId)
+                              ? "-- Chọn giảng viên & học phần trước --"
+                              : computeAvailableTimeOptions.length === 0
+                                ? "Không còn khoảng thời gian trống phù hợp"
+                                : "-- Chọn khoảng thời gian --"}
                           </option>
-                        );
-                      })}
-                    </select>
-                  </div>
-                </div>
-                <div className={styles.formActions}>
-                  <button
-                    className={styles.btnAddManual}
-                    disabled={
-                      !selectedTeacherId ||
-                      !formSectionId ||
-                      !selectedTimeOption ||
-                      !formClassroomId
-                    }
-                    onClick={async () => {
-                      if (
-                        !selectedTeacherId ||
-                        !formSectionId ||
-                        !selectedTimeOption ||
-                        !formClassroomId
-                      ) {
-                        toast.warning("Vui lòng chọn đầy đủ thông tin.");
-                        return;
-                      }
-                      try {
-                        const semester = getSelectedSemester();
-                        if (!semester) {
-                          toast.warning("Vui lòng chọn học kỳ trước.");
-                          return;
+                          {computeAvailableTimeOptions.map((opt) => (
+                            <option key={opt.key} value={opt.key}>
+                              {formatDay(opt.day)}: {formatPeriodRange(opt.startPeriodId, opt.endPeriodId)}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className={styles.formGroup}>
+                        <label>Lớp học (phòng trống & đủ chỗ)</label>
+                        <select
+                          value={formClassroomId}
+                          onChange={(e) => setFormClassroomId(e.target.value)}
+                          disabled={!selectedTimeOption}
+                        >
+                          <option value="">
+                            {!selectedTimeOption
+                              ? "-- Chọn khoảng thời gian trước --"
+                              : availableClassroomsForSelection.length === 0
+                                ? "Không còn phòng phù hợp"
+                                : "-- Chọn phòng học --"}
+                          </option>
+                          {availableClassroomsForSelection.map((c) => {
+                            const id = c.id || c._id;
+                            return (
+                              <option key={id} value={id}>
+                                {c.name} ({id}) - {c.capacity} chỗ
+                              </option>
+                            );
+                          })}
+                        </select>
+                      </div>
+                    </div>
+                    <div className={styles.formActions}>
+                      <button
+                        className={styles.btnAddManual}
+                        disabled={
+                          !selectedTeacherId ||
+                          !formSectionId ||
+                          !selectedTimeOption ||
+                          !formClassroomId
                         }
-                        const { day, periodIds: windowPeriods } = selectedTimeOption;
-                        const newSchedules = await Promise.all(
-                          windowPeriods.map((pid) =>
-                            scheduleAPI.create({
-                              id: `${selectedTeacherId}_${formSectionId}_${day}_${pid}_${formClassroomId}`,
+                        onClick={async () => {
+                          if (
+                            !selectedTeacherId ||
+                            !formSectionId ||
+                            !selectedTimeOption ||
+                            !formClassroomId
+                          ) {
+                            toast.warning("Vui lòng chọn đầy đủ thông tin.");
+                            return;
+                          }
+                          try {
+                            const semester = getSelectedSemester();
+                            if (!semester) {
+                              toast.warning("Vui lòng chọn học kỳ trước.");
+                              return;
+                            }
+                            // Phải chọn một schedule cụ thể để thêm lịch thủ công
+                            if (!selectedScheduleName) {
+                              toast.warning("Vui lòng chọn một lịch cụ thể hoặc tạo lịch mới trước khi thêm lịch phân công.");
+                              return;
+                            }
+
+                            // Load current schedule to get existing assignments
+                            const currentSchedules = await scheduleAPI.list({ semester, name: selectedScheduleName });
+                            const currentSchedule = Array.isArray(currentSchedules) && currentSchedules.length > 0
+                              ? currentSchedules[0]
+                              : null;
+
+                            // Get existing assignments or create new array
+                            const existingAssignments = currentSchedule?.assignments || [];
+
+                            // Convert day from "MONDAY" to "Mon"
+                            const dayMap = {
+                              "MONDAY": "Mon",
+                              "TUESDAY": "Tue",
+                              "WEDNESDAY": "Wed",
+                              "THURSDAY": "Thu",
+                              "FRIDAY": "Fri",
+                              "SATURDAY": "Sat",
+                              "SUNDAY": "Sun"
+                            };
+                            const dayShort = dayMap[selectedTimeOption.day] || selectedTimeOption.day;
+
+                            // Add new assignments for each period
+                            const newAssignments = selectedTimeOption.periodIds.map((pid) => {
+                              // Convert period ID to order index
+                              const periodIndex = PERIODS.findIndex(p => p.id === pid);
+                              const periodOrder = periodIndex >= 0 ? (periodIndex + 1).toString() : "1";
+
+                              return {
+                                teacherId: selectedTeacherId,
+                                sectionId: formSectionId,
+                                classroomId: formClassroomId,
+                                day: dayShort,
+                                period: periodOrder
+                              };
+                            });
+
+                            // Merge with existing assignments
+                            const updatedAssignments = [...existingAssignments, ...newAssignments];
+
+                            // Calculate statistics
+                            const teacherIds = new Set(updatedAssignments.map(a => a.teacherId));
+                            const classroomIds = new Set(updatedAssignments.map(a => a.classroomId));
+                            const sectionIds = new Set(updatedAssignments.map(a => a.sectionId));
+
+                            // Get course IDs from sections
+                            const courseIds = new Set();
+                            for (const sectionId of sectionIds) {
+                              const section = sections.find(s => s.id === sectionId);
+                              if (section && section.courseId) {
+                                courseIds.add(section.courseId);
+                              }
+                            }
+
+                            const statistics = {
+                              numAssignments: updatedAssignments.length,
+                              numClassrooms: classroomIds.size,
+                              numCourses: courseIds.size,
+                              numSections: sectionIds.size,
+                              numTeachers: teacherIds.size
+                            };
+
+                            // Update or create schedule
+                            const scheduleId = currentSchedule?.id || `${selectedScheduleName}_${semester}`;
+                            const scheduleData = {
+                              id: scheduleId,
                               semester,
-                              teacherId: selectedTeacherId,
-                              sectionId: formSectionId,
-                              classroomId: formClassroomId,
-                              day,
-                              period: pid,
-                            })
-                          )
-                        );
-                        toast.success("Thêm lịch phân công thành công.");
-                        setFormTimeKey("");
-                        setFormClassroomId("");
-                        setFormSectionId("");
-                        const updatedSchedules = [...schedules, ...newSchedules];
-                        updateCurrentVersionSchedules(updatedSchedules);
-                        setShowAddForm(false);
-                      } catch (err) {
-                        console.error(err);
-                        toast.error("Thêm lịch phân công thất bại: " + (err.message || ""));
-                      }
-                    }}
-                  >
-                    Thêm vào lịch
-                  </button>
-                </div>
+                              name: selectedScheduleName,
+                              assignments: updatedAssignments,
+                              statistics
+                            };
+
+                            if (currentSchedule) {
+                              await scheduleAPI.update(scheduleId, scheduleData);
+                            } else {
+                              await scheduleAPI.create(scheduleData);
+                            }
+                            toast.success("Thêm lịch phân công thành công.");
+                            setFormTimeKey("");
+                            setFormClassroomId("");
+                            setFormSectionId("");
+                            setShowAddForm(false);
+                            // Reload and re-evaluate
+                            await refreshSchedulesAndEvaluate();
+                          } catch (err) {
+                            console.error(err);
+                            toast.error("Thêm lịch phân công thất bại: " + (err.message || ""));
+                          }
+                        }}
+                      >
+                        Thêm vào lịch
+                      </button>
+                    </div>
                   </>
                 )}
               </div>
             )}
 
-            {!selectedTeacher ? (
+            {!selectedScheduleName ? (
               <div className={styles.empty}>
-                Chọn một giảng viên ở bên trái để xem bảng lịch phân công.
+                {scheduleSets.length === 0
+                  ? "Chưa có lịch nào. Hãy tạo lịch mới để bắt đầu."
+                  : "Vui lòng chọn một lịch cụ thể từ dropdown ở trên để xem chi tiết."}
               </div>
-      ) : schedules.length === 0 ? (
-        <div className={styles.empty}>
-                Chưa có lịch học nào. Nhấn "Tạo lịch tự động" để tạo lịch từ các đăng ký dạy học đã được phê duyệt.
-              </div>
-            ) : teacherSchedules.length === 0 ? (
+            ) : schedules.length === 0 ? (
               <div className={styles.empty}>
-                Giảng viên <strong>{selectedTeacher.name || selectedTeacher.id || selectedTeacher._id}</strong> chưa
-                có phân công nào trong học kỳ hiện tại.
-        </div>
-      ) : null}
-            {(selectedTeacher && schedules.length > 0 && teacherSchedules.length > 0) && (
-        <div className={styles.scheduleTable}>
-                <div className={styles.selectedTeacherHeader}>
-                  <div className={styles.selectedTeacherInfo}>
-                    <div className={styles.teacherAvatarLarge}>
-                      {selectedTeacher.avatar ? (
-                        <img
-                          src={selectedTeacher.avatar}
-                          alt={selectedTeacher.name}
-                          className={styles.teacherAvatarImg}
-                        />
-                      ) : (
-                        <span>
-                          {(selectedTeacher.name || selectedTeacher.id || selectedTeacher._id || "?")
-                            .toString()
-                            .charAt(0)
-                            .toUpperCase()}
+                Lịch "<strong>{selectedScheduleName}</strong>" chưa có phân công nào. Nhấn "Xếp lịch tự động" để tạo lịch từ các đăng ký dạy học đã được phê duyệt.
+              </div>
+            ) : selectedTeacherId && teacherSchedules.length === 0 ? (
+              <div className={styles.empty}>
+                Giảng viên <strong>{selectedTeacher?.name || selectedTeacher?.id || selectedTeacher?._id || selectedTeacherId}</strong> chưa
+                có phân công nào trong lịch "<strong>{selectedScheduleName}</strong>".
+              </div>
+            ) : schedules.length > 0 && (
+              <div className={styles.scheduleTable}>
+                {selectedTeacherId && selectedTeacher && (
+                  <div className={styles.selectedTeacherHeader}>
+                    <div className={styles.selectedTeacherInfo}>
+                      <div className={styles.teacherAvatarLarge}>
+                        {selectedTeacher.avatar ? (
+                          <img
+                            src={selectedTeacher.avatar}
+                            alt={selectedTeacher.name}
+                            className={styles.teacherAvatarImg}
+                          />
+                        ) : (
+                          <span>
+                            {(selectedTeacher.name || selectedTeacher.id || selectedTeacher._id || "?")
+                              .toString()
+                              .charAt(0)
+                              .toUpperCase()}
+                          </span>
+                        )}
+                      </div>
+                      <div>
+                        <h3>Lịch phân công của {selectedTeacher.name || selectedTeacher.id || selectedTeacher._id}</h3>
+                        <span className={styles.selectedTeacherId}>
+                          Mã: {selectedTeacher.id || selectedTeacher._id}
                         </span>
-                      )}
-                    </div>
-                    <div>
-                      <h3>Lịch phân công của {selectedTeacher.name || selectedTeacher.id || selectedTeacher._id}</h3>
-                      <span className={styles.selectedTeacherId}>
-                        Mã: {selectedTeacher.id || selectedTeacher._id}
-                      </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-          <table>
-            <thead>
-              <tr>
+                )}
+                <table>
+                  <thead>
+                    <tr>
                       <th>Ca / Thứ</th>
                       {dayKeys.map((day) => (
                         <th key={day}>{formatDay(day)}</th>
                       ))}
-              </tr>
-            </thead>
-            <tbody>
+                    </tr>
+                  </thead>
+                  <tbody>
                     {PERIODS.map((period) => (
                       <tr key={period.id}>
                         <td className={styles.periodCol}>{formatPeriodLabel(period.id)}</td>
@@ -955,7 +1066,7 @@ const Schedule = () => {
 
                           const block = cell.block;
 
-                return (
+                          return (
                             <td
                               key={day}
                               className={styles.cell}
@@ -988,11 +1099,9 @@ const Schedule = () => {
                                             await Promise.all(
                                               scheduleIdsToDelete.map((id) => scheduleAPI.remove(id))
                                             );
-                                            const updatedSchedules = schedules.filter(
-                                              (s) => !scheduleIdsToDelete.includes(s.id)
-                                            );
-                                            updateCurrentVersionSchedules(updatedSchedules);
                                             toast.success("Xóa phân công thành công.");
+                                            // Reload and re-evaluate
+                                            await refreshSchedulesAndEvaluate();
                                           } catch (err) {
                                             console.error(err);
                                             toast.error("Xóa thất bại: " + (err.message || ""));
@@ -1017,39 +1126,39 @@ const Schedule = () => {
                 </table>
               </div>
             )}
-            {currentVersionId && (
+            {schedules.length > 0 && (
               <div className={styles.scheduleFooter}>
                 <div className={styles.scheduleInfo}>
                   {currentScheduleValue !== null && (
                     <div className={styles.infoItem}>
                       <span className={styles.infoLabel}>Tổng giá trị:</span>
                       <span className={styles.infoValue}>
-                        {evaluatingValue ? "Đang tính..." : currentScheduleValue}
+                        {evaluatingValue
+                          ? "Đang tính..."
+                          : (typeof currentScheduleValue === 'object'
+                            ? Math.round(currentScheduleValue.totalScore || 0)
+                            : currentScheduleValue)}
                       </span>
                     </div>
                   )}
-                  {(() => {
-                    const currentVersion = scheduleVersions.find(v => v.id === currentVersionId);
-                    if (currentVersion && currentVersion.createdAt) {
-                      const createdDate = new Date(currentVersion.createdAt);
-                      return (
-                        <div className={styles.infoItem}>
-                          <span className={styles.infoLabel}>Thời gian tạo:</span>
-                          <span className={styles.infoValue}>
-                            {createdDate.toLocaleString("vi-VN")}
-                          </span>
-                        </div>
-                      );
-                    }
-                    return null;
-                  })()}
+                  <div className={styles.infoItem}>
+                    <span className={styles.infoLabel}>Tổng số phân công:</span>
+                    <span className={styles.infoValue}>{schedules.length}</span>
+                  </div>
                 </div>
+              </div>
+            )}
+
+            {/* Delete Button at the bottom */}
+            {selectedScheduleName && (
+              <div className={styles.deleteZone} style={{ marginTop: '30px', borderTop: '1px solid #eee', paddingTop: '20px', display: 'flex', justifyContent: 'flex-end' }}>
                 <button
-                  className={styles.btnDeleteVersion}
-                  onClick={() => deleteVersion(currentVersionId)}
-                  title="Xóa cách xếp lịch này"
+                  className={styles.btnDeleteSchedule}
+                  onClick={handleClearSchedules}
+                  disabled={generating || generatingExact}
+                  title="Xóa phiên bản lịch này vĩnh viễn"
                 >
-                  Xóa cách xếp lịch này
+                  🗑️ Xóa lịch "{selectedScheduleName}"
                 </button>
               </div>
             )}
@@ -1089,8 +1198,8 @@ const Schedule = () => {
                     <th>Ca</th>
                     <td>{formatPeriodRange(selectedBlock.startPeriodId, selectedBlock.endPeriodId)}</td>
                   </tr>
-            </tbody>
-          </table>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>

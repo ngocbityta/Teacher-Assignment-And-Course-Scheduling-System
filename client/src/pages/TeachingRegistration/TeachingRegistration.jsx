@@ -215,7 +215,7 @@ const TeachingRegistration = () => {
               id: genId("tp"),
               teacherId: form.teacherId,
               semester,
-              period: periodId,
+              periodId: periodId,
               day: dayKey,
               teachingRegistrationId: trId,
               preferenceValue: val,
@@ -357,12 +357,12 @@ const TeachingRegistration = () => {
               {(() => {
                 const teacher = allTeachers.find((t) => t.id === selectedRegistration.teacherId) || {};
                 const reg = detail.reg || selectedRegistration;
-                
+
                 const timeTable = {};
                 DAYS.forEach(day => {
                   timeTable[day.key] = {};
                   PERIODS.forEach(period => {
-                    const pref = detail.timePrefs.find(tp => tp.day === day.key && tp.period === period.id);
+                    const pref = detail.timePrefs.find(tp => tp.day === day.key && tp.periodId === period.id);
                     timeTable[day.key][period.id] = pref ? pref.preferenceValue : null;
                   });
                 });
@@ -570,7 +570,7 @@ const TeachingRegistration = () => {
             </div>
 
             <div className={styles.modalBody}>
-                  {step === 1 && (
+              {step === 1 && (
                 <div className={styles.stepContent}>
                   <h3 className={styles.stepTitle}>Chọn giảng viên</h3>
                   <div className={styles.formGroup}>
@@ -646,18 +646,18 @@ const TeachingRegistration = () => {
                   <div className={styles.timeGridContainer}>
                     <div className={styles.timeGrid}>
                       <div className={styles.gridHeader}>
-                        <div className={styles.gridCorner}></div>
-                        {PERIODS.map((p) => (
-                          <div key={p.id} className={styles.gridCellHead}>
-                            {p.name}
+                        <div className={styles.gridCorner}>Ca / Thứ</div>
+                        {DAYS.map((d) => (
+                          <div key={d.key} className={styles.gridCellHead}>
+                            {d.label}
                           </div>
                         ))}
                       </div>
-                      {DAYS.map((d) => (
-                        <div key={d.key} className={styles.gridRow}>
-                          <div className={styles.gridCellHead}>{d.label}</div>
-                          {PERIODS.map((p) => (
-                            <div key={p.id} className={styles.gridCell}>
+                      {PERIODS.map((p) => (
+                        <div key={p.id} className={styles.gridRow}>
+                          <div className={styles.gridCellHead}>{p.name}</div>
+                          {DAYS.map((d) => (
+                            <div key={d.key} className={styles.gridCell}>
                               <input
                                 type="number"
                                 min="0"
@@ -750,25 +750,29 @@ const TeachingRegistration = () => {
 
                   <div className={styles.previewSection}>
                     <h4>Thời gian ưa thích</h4>
-                    {Object.entries(timeGrid).flatMap(([day, row]) =>
+                    {Object.entries(timeGrid).flatMap(([dayKey, row]) =>
                       Object.entries(row)
                         .filter(([, v]) => Number(v) > 0)
-                        .map(([period, v]) => `${day} - ${period}: ${v}`)
+                        .map(([periodId, v]) => `${dayKey} - ${periodId}: ${v}`)
                     ).length === 0 ? (
                       <p className={styles.emptyText}>Chưa chọn thời gian</p>
                     ) : (
                       <div className={styles.previewList}>
-                        {Object.entries(timeGrid).flatMap(([day, row]) =>
+                        {Object.entries(timeGrid).flatMap(([dayKey, row]) =>
                           Object.entries(row)
                             .filter(([, v]) => Number(v) > 0)
-                            .map(([period, v]) => (
-                              <div
-                                key={`${day}-${period}`}
-                                className={styles.previewTag}
-                              >
-                                {day} - {period}: {v}
-                              </div>
-                            ))
+                            .map(([periodId, v]) => {
+                              const dayLabel = DAYS.find(d => d.key === dayKey)?.label || dayKey;
+                              const periodLabel = PERIODS.find(p => p.id === periodId)?.name || periodId;
+                              return (
+                                <div
+                                  key={`${dayKey}-${periodId}`}
+                                  className={styles.previewTag}
+                                >
+                                  {dayLabel} - {periodLabel}: {v}
+                                </div>
+                              );
+                            })
                         )}
                       </div>
                     )}
