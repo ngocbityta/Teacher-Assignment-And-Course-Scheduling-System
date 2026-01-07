@@ -10,6 +10,14 @@ export const coursesAPI = {
         includeSemester: true,
       })
     ),
+  // Fetch all courses (for lookup purposes where we need complete data)
+  listAll: async (params = {}) =>
+    toPageResult(
+      await apiRequest("/courses", {
+        query: { page: 0, size: 500, ...params },
+        includeSemester: true,
+      })
+    ),
   listWithMeta: (params = {}) =>
     apiRequest("/courses", {
       query: { ...DEFAULT_PAGE, ...params },

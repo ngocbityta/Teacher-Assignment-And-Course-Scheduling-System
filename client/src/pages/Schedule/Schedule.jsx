@@ -40,7 +40,8 @@ const Schedule = () => {
   const [promptModal, setPromptModal] = useState(null);
 
   // Load schedules from database
-  const loadSchedules = async (scheduleName = selectedScheduleName) => {
+  // sectionsData parameter ensures we use the latest sections for multi-period calculation
+  const loadSchedules = async (scheduleName = selectedScheduleName, sectionsData = sections) => {
     try {
       setLoading(true);
       setError(null);
@@ -78,7 +79,19 @@ const Schedule = () => {
               const startPeriodOrder = parseInt(assignment.period);
 
               // Find section to get duration
-              const section = sections.find(s => s.id === assignment.sectionId);
+              // Section IDs in assignments may have semester suffix (e.g., C001_S1_2023-2)
+              // Try exact match first, then try matching without semester suffix
+              let section = sectionsData.find(s => s.id === assignment.sectionId);
+              if (!section) {
+                // Try to match by removing semester suffix from assignment.sectionId
+                // Pattern: {courseId}_{sectionName}_{semester} -> try matching {courseId}_{sectionName}
+                const parts = assignment.sectionId.split('_');
+                if (parts.length >= 2) {
+                  // Remove last part (semester) and try matching
+                  const baseId = parts.slice(0, -1).join('_');
+                  section = sectionsData.find(s => s.id === baseId || s.id === assignment.sectionId);
+                }
+              }
               const duration = section ? (section.periodRequired || 1) : 1;
 
               for (let i = 0; i < duration; i++) {
@@ -171,8 +184,9 @@ const Schedule = () => {
   const loadMeta = async () => {
     try {
       setMetaLoading(true);
+      // Use listAll to fetch all sections (not just first page) for proper lookup
       const [{ items: sectionItems }, classroomItems, prefItems] = await Promise.all([
-        sectionAPI.list(),
+        sectionAPI.listAll(),
         classroomAPI.list(),
         coursePreferenceAPI.list(),
       ]);
@@ -381,18 +395,20 @@ const Schedule = () => {
     init();
   }, []);
 
-  // Reload schedules when selected schedule name changes
+  // Reload schedules when selected schedule name changes OR when sections are loaded
+  // This ensures sections data is available when processing schedule multi-period display
   useEffect(() => {
-    if (selectedScheduleName) {
-      loadSchedules(selectedScheduleName);
+    if (selectedScheduleName && sections.length > 0) {
+      // Pass sections explicitly to avoid stale closure issues
+      loadSchedules(selectedScheduleName, sections);
       evaluateScheduleValue(selectedScheduleName);
-    } else {
+    } else if (!selectedScheduleName) {
       // If no name selected, clear schedules to avoid confusion
       setSchedules([]);
       setCurrentScheduleValue(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedScheduleName]);
+  }, [selectedScheduleName, sections]);
 
   const selectedTeacher = useMemo(
     () => teachers.find((t) => (t.id || t._id) === selectedTeacherId) || null,

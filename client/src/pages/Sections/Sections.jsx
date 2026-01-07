@@ -20,9 +20,10 @@ const Sections = () => {
   const load = async () => {
     setLoading(true);
     try {
+      // Use listAll to fetch all sections and courses (not just first page) for proper lookup
       const [{ items: sectionItems }, { items: courseItems }] = await Promise.all([
-        sectionAPI.list(),
-        coursesAPI.list(),
+        sectionAPI.listAll(),
+        coursesAPI.listAll(),
       ]);
       setSections(sectionItems || []);
       setCourses(courseItems || []);
@@ -157,8 +158,8 @@ const Sections = () => {
                   </div>
                   <div className={styles.sectionsList}>
                     {group.items.map((section) => (
-                      <div 
-                        key={section.id} 
+                      <div
+                        key={section.id}
                         className={styles.sectionItem}
                         onClick={() => setSelectedSection(section)}
                       >

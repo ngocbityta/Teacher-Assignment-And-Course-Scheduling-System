@@ -47,10 +47,23 @@ public class SectionServiceImpl implements SectionService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<SectionDTO> search(String keyword, Pageable pageable) {
-        Page<Section> page = (keyword == null || keyword.isBlank())
-                ? sectionRepository.findAll(pageable)
-                : sectionRepository.findByNameContainingIgnoreCase(keyword.trim(), pageable);
+    public Page<SectionDTO> search(String keyword, String semester, Pageable pageable) {
+        Page<Section> page;
+        
+        // Use proper repository methods for filtering
+        if (semester != null && !semester.isBlank()) {
+            String semesterSuffix = "_" + semester;
+            if (keyword == null || keyword.isBlank()) {
+                page = sectionRepository.findByIdEndingWith(semesterSuffix, pageable);
+            } else {
+                page = sectionRepository.findByNameContainingIgnoreCaseAndIdEndingWith(keyword.trim(), semesterSuffix, pageable);
+            }
+        } else {
+            page = (keyword == null || keyword.isBlank())
+                    ? sectionRepository.findAll(pageable)
+                    : sectionRepository.findByNameContainingIgnoreCase(keyword.trim(), pageable);
+        }
+        
         return page.map(sectionMapper::toDto);
     }
 

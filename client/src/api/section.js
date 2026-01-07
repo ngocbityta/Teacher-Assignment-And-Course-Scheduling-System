@@ -10,6 +10,14 @@ export const sectionAPI = {
         includeSemester: true,
       })
     ),
+  // Fetch all sections (for lookup/schedule purposes where we need complete data)
+  listAll: async (params = {}) =>
+    toPageResult(
+      await apiRequest("/sections", {
+        query: { page: 0, size: 1000, ...params },
+        includeSemester: true,
+      })
+    ),
   listWithMeta: (params = {}) =>
     apiRequest("/sections", {
       query: { ...DEFAULT_PAGE, ...params },

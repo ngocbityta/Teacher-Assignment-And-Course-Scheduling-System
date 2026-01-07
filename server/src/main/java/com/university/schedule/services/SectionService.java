@@ -8,7 +8,7 @@ import com.university.schedule.dtos.SectionDTO;
 public interface SectionService {
     SectionDTO create(SectionDTO dto);
     SectionDTO getById(String id);
-    Page<SectionDTO> search(String keyword, Pageable pageable);
+    Page<SectionDTO> search(String keyword, String semester, Pageable pageable);
     SectionDTO update(String id, SectionDTO dto);
     void delete(String id);
 }

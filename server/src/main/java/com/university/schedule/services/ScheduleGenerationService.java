@@ -86,6 +86,7 @@ public class ScheduleGenerationService {
 
             long totalSections = sectionRepository.findAll().stream()
                 .filter(s -> s.getCourse() != null && courseIds.contains(s.getCourse().getId()))
+                .filter(s -> s.getId().endsWith("_" + semester))  // Only count sections for this semester
                 .count();
 
             if (distinctTeachers > 15 || totalSections > 30) {
@@ -172,12 +173,14 @@ public class ScheduleGenerationService {
         }
 
         // Check sections - ensure all sections have at least one teacher who can teach them
+        // Only check sections for this semester (sections have ID pattern: {courseId}_{sectionName}_{semester})
         Set<String> courseIds = coursePreferences.stream()
                 .map(cp -> cp.getCourse().getId())
                 .collect(Collectors.toSet());
         
         List<Section> sections = sectionRepository.findAll().stream()
                 .filter(s -> s.getCourse() != null && courseIds.contains(s.getCourse().getId()))
+                .filter(s -> s.getId().endsWith("_" + semester))  // Only sections for this semester
                 .collect(Collectors.toList());
         
         if (sections.isEmpty()) {
@@ -214,7 +217,7 @@ public class ScheduleGenerationService {
     private Map<String, Object> buildRequestData(List<TeachingRegistration> registrations, String semester) {
         Map<String, Object> requestData = new HashMap<>();
         requestData.put("teachers", buildTeachersData(registrations));
-        requestData.put("courses", buildCoursesData(registrations));
+        requestData.put("courses", buildCoursesData(registrations, semester));
         requestData.put("classrooms", buildClassroomsData(semester));
         return requestData;
     }
@@ -280,7 +283,7 @@ public class ScheduleGenerationService {
         return dayTimePreferences;
     }
 
-    private List<Map<String, Object>> buildCoursesData(List<TeachingRegistration> registrations) {
+    private List<Map<String, Object>> buildCoursesData(List<TeachingRegistration> registrations, String semester) {
         Set<String> registrationIds = registrations.stream()
                 .map(TeachingRegistration::getId)
                 .collect(Collectors.toSet());
@@ -292,11 +295,11 @@ public class ScheduleGenerationService {
                 .collect(Collectors.toSet());
 
         return courseIds.stream()
-                .map(this::buildCourseData)
+                .map(courseId -> buildCourseData(courseId, semester))
                 .collect(Collectors.toList());
     }
 
-    private Map<String, Object> buildCourseData(String courseId) {
+    private Map<String, Object> buildCourseData(String courseId, String semester) {
         Course course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new RuntimeException("Course not found: " + courseId));
 
@@ -311,13 +314,16 @@ public class ScheduleGenerationService {
             maxTeachers = Math.max(orDefault(minTeachers, DEFAULT_MIN_TEACHERS), DEFAULT_MAX_TEACHERS);
         }
         courseData.put("max_teachers", maxTeachers);
-        courseData.put("sections", buildSectionsData(courseId));
+        courseData.put("sections", buildSectionsData(courseId, semester));
         return courseData;
     }
 
-    private List<Map<String, Object>> buildSectionsData(String courseId) {
+    private List<Map<String, Object>> buildSectionsData(String courseId, String semester) {
+        // Filter sections by semester suffix to avoid mixing data from different semesters
+        // Section IDs are formatted as: {courseId}_{sectionName}_{semester}
         return sectionRepository.findAll().stream()
                 .filter(s -> s.getCourse().getId().equals(courseId))
+                .filter(s -> s.getId().endsWith("_" + semester))  // Only sections for this semester
                 .map(s -> {
                     Map<String, Object> sectionData = new HashMap<>();
                     sectionData.put("id", s.getId());

@@ -26,8 +26,9 @@ public class SectionController {
 
     @GetMapping
     public Page<SectionDTO> search(@RequestParam(required = false) String keyword,
+                                   @RequestParam(required = false) String semester,
                                    Pageable pageable) {
-        return sectionService.search(keyword, pageable);
+        return sectionService.search(keyword, semester, pageable);
     }
 
     @PutMapping("/{id}")
