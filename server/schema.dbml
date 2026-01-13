@@ -1,72 +1,77 @@
-Table Classroom {
+Table classrooms {
   id varchar [pk]
   name varchar
   capacity int
   status varchar
-  semester varchar [ref: > Semester.id]
+  semester varchar
 }
 
-Table Course {
+Table courses {
   id varchar [pk]
   name varchar
   min_teachers integer
   max_teachers integer
 }
 
-Table Section {
+Table sections {
   id varchar [pk]
-  course_id varchar [ref: > Course.id]
+  course_id varchar [ref: > courses.id]
   name varchar
+  period_required int
+  required_seats int
 }
 
-Table Teacher {
+Table teachers {
   id varchar [pk]
   name varchar
   status varchar
-  semester varchar [ref: > Semester.id]
+  semester varchar
+  avatar varchar
 }
 
-Table Semester {
+Table teaching_registrations {
   id varchar [pk]
-  name varchar
-  start_time time
-  end_time time
-}
-
-Table CoursePreference {
-  id varchar [pk]
-  semester varchar [ref: > Semester.id]
-  teacher_id varchar [ref: > Teacher.id]
-  teaching_registration_id varchar [ref: > TeacherRegistration.id]
-  course_id varchar [ref: > Course.id]
-  preference_value int
-}
-
-Table TimePreference {
-  id varchar [pk]
-  teacher_id varchar [ref: > Teacher.id]
-  teaching_registration_id varchar [ref: > TeacherRegistration.id]
-  semester varchar [ref: > Semester.id]
-  period enum
-  day enum
-  preference_value int
-}
-
-
-Table TeacherRegistration {
-  id varchar [pk]
-  teacher_id varchar [ref: > Teacher.id]
-  semester varchar [ref: > Semester.id]
+  teacher_id varchar [ref: > teachers.id]
+  semester varchar
   status varchar
   max_courses int
 }
 
-Table Schedule {
+Table course_preferences {
   id varchar [pk]
-  semester varchar [ref: > Semester.id]
-  teacher_id varchar [ref: > Teacher.id]
-  section_id varchar [ref: > Section.id]
-  room_id varchar [ref: > Classroom.id]
-  day enum
-  period enum
+  semester varchar
+  teacher_id varchar [ref: > teachers.id]
+  teaching_registration_id varchar [ref: > teaching_registrations.id]
+  course_id varchar [ref: > courses.id]
+  preference_value int
+}
+
+Table periods {
+  id varchar [pk]
+  name varchar
+  start_time time
+  end_time time
+  order_index int
+  description varchar
+}
+
+Table time_preferences {
+  id varchar [pk]
+  teacher_id varchar [ref: > teachers.id]
+  teaching_registration_id varchar [ref: > teaching_registrations.id]
+  semester varchar
+  day varchar
+  period_id varchar [ref: > periods.id]
+  preference_value int
+}
+
+Table schedules {
+  id varchar [pk]
+  semester varchar
+  name varchar
+  assignments jsonb
+  statistics jsonb
+  objective_value int
+  penalties jsonb
+  scores jsonb
 }
